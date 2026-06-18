@@ -1,0 +1,255 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 120rpx;
+}
+
+.header {
+  padding: $spacing-lg $page-padding;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+}
+
+.pageTitle {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+  margin-bottom: $spacing-md;
+}
+
+.balanceStats {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.balanceItem {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.balanceValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-white;
+}
+
+.balanceLabel {
+  font-size: $font-size-xs;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.recommendCard {
+  margin: $spacing-lg $page-padding;
+  background: linear-gradient(135deg, $color-secondary 0%, #FFE58F 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.recommendHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.recommendIcon {
+  font-size: $font-size-lg;
+  margin-right: $spacing-sm;
+}
+
+.recommendTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-primary-dark;
+}
+
+.recommendContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recommendWindow {
+  font-size: 36rpx;
+  font-weight: $font-weight-bold;
+  color: $color-primary-dark;
+}
+
+.recommendHint {
+  font-size: $font-size-sm;
+  color: $color-primary;
+}
+
+.content {
+  padding: 0 $page-padding;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.windowList {
+  margin-bottom: $spacing-xl;
+}
+
+.ticketSection {
+  margin-bottom: $spacing-xl;
+}
+
+.ticketTabs {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+  background: $color-bg-card;
+  border-radius: $radius-button;
+  padding: 6rpx;
+}
+
+.ticketTab {
+  flex: 1;
+  text-align: center;
+  padding: $spacing-sm 0;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  border-radius: $radius-button;
+  transition: all $transition-base;
+
+  &.active {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $color-text-white;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.ticketList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.ticketCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ticketInfo {
+  flex: 1;
+}
+
+.ticketNo {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.ticketMeta {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.ticketStatus {
+  padding: 6rpx 20rpx;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.waiting {
+  background: rgba(22, 93, 255, 0.1);
+  color: $color-info;
+}
+
+.calling {
+  background: rgba(255, 125, 0, 0.1);
+  color: $color-warning;
+}
+
+.serving {
+  background: rgba(0, 180, 42, 0.1);
+  color: $color-success;
+}
+
+.completed {
+  background: rgba(134, 144, 156, 0.1);
+  color: $color-text-tertiary;
+}
+
+.cancelled {
+  background: rgba(245, 63, 63, 0.1);
+  color: $color-error;
+}
+
+.ticketActions {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: $spacing-sm;
+}
+
+.ticketBtn {
+  @include button-reset;
+  padding: $spacing-sm $spacing-md;
+  height: auto;
+  border-radius: $radius-button;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.primary {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $color-text-white;
+  }
+
+  &.secondary {
+    background: $color-bg-hover;
+    color: $color-text-secondary;
+  }
+}
+
+.actionBar {
+  display: flex;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.actionBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.primary {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $color-text-white;
+  }
+
+  &.secondary {
+    background: $color-bg-card;
+    color: $color-text-secondary;
+    box-shadow: $shadow-card;
+  }
+}

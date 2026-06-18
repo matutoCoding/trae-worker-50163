@@ -1,0 +1,175 @@
+@use '@/styles/variables.scss' as *;
+
+.roomCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+  position: relative;
+  overflow: hidden;
+
+  &:active {
+    transform: scale(0.98);
+    box-shadow: $shadow-card-hover;
+  }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-md;
+}
+
+.roomInfo {
+  flex: 1;
+}
+
+.roomNo {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.roomType {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 16rpx;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-white;
+}
+
+.idle {
+  background: $color-room-idle;
+}
+
+.using {
+  background: $color-room-using;
+}
+
+.overnight {
+  background: $color-room-overnight;
+}
+
+.reserved {
+  background: $color-room-reserved;
+}
+
+.maintenance {
+  background: $color-room-maintenance;
+}
+
+.cardBody {
+  margin-bottom: $spacing-md;
+}
+
+.equipmentList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-md;
+}
+
+.equipmentTag {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  background: $color-bg-tag;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-xs;
+}
+
+.capacityInfo {
+  display: flex;
+  align-items: center;
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.capacityIcon {
+  margin-right: 8rpx;
+}
+
+.cardFooter {
+  border-top: 1rpx solid $color-divider;
+  padding-top: $spacing-md;
+}
+
+.timeInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.timeLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.timeValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.feeInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.feeLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.feeValue {
+  font-size: $font-size-lg;
+  color: $color-text-price;
+  font-weight: $font-weight-semibold;
+}
+
+.actionButton {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-md;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-button;
+  margin-top: $spacing-md;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.disabled {
+    background: $color-text-disabled;
+  }
+}
+
+.badgeList {
+  display: flex;
+  gap: $spacing-xs;
+  margin-top: $spacing-sm;
+}
+
+.badge {
+  font-size: 20rpx;
+  padding: 2rpx 10rpx;
+  border-radius: $radius-xs;
+  background: $color-secondary-light;
+  color: $color-secondary-dark;
+}

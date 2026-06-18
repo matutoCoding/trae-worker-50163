@@ -1,0 +1,276 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 120rpx;
+}
+
+.header {
+  padding: $spacing-lg $page-padding;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+}
+
+.pageTitle {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+  margin-bottom: $spacing-sm;
+}
+
+.statsRow {
+  display: flex;
+  gap: $spacing-lg;
+}
+
+.statItem {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.statValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-white;
+}
+
+.statLabel {
+  font-size: $font-size-xs;
+}
+
+.content {
+  padding: $spacing-lg $page-padding;
+}
+
+.tabBar {
+  display: flex;
+  background: $color-bg-card;
+  border-radius: $radius-button;
+  padding: 6rpx;
+  margin-bottom: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.tabItem {
+  flex: 1;
+  text-align: center;
+  padding: $spacing-sm 0;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  border-radius: $radius-button;
+  transition: all $transition-base;
+
+  &.active {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $color-text-white;
+  }
+}
+
+.summaryCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-lg;
+}
+
+.summaryGrid {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.billList {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  z-index: 999;
+}
+
+.modalContent {
+  width: 100%;
+  background: $color-bg-card;
+  border-radius: $radius-xl $radius-xl 0 0;
+  padding: $spacing-lg;
+  max-height: 80vh;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+}
+
+.modalTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.closeBtn {
+  font-size: $font-size-xl;
+  color: $color-text-tertiary;
+  padding: $spacing-xs;
+}
+
+.billDetail {
+  margin-bottom: $spacing-lg;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  padding: $spacing-sm 0;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.detailLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.detailValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.itemListTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.itemRow {
+  display: flex;
+  justify-content: space-between;
+  padding: $spacing-sm 0;
+}
+
+.totalSection {
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  padding: $spacing-xs 0;
+
+  &.final {
+    padding-top: $spacing-md;
+    margin-top: $spacing-sm;
+    border-top: 1rpx solid $color-divider;
+  }
+}
+
+.totalLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.totalValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.finalLabel {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.finalValue {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-price;
+}
+
+.paymentMethods {
+  margin-bottom: $spacing-lg;
+}
+
+.methodsTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.methodList {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.methodItem {
+  flex: 1;
+  padding: $spacing-md;
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  text-align: center;
+  border: 2rpx solid transparent;
+  transition: all $transition-base;
+
+  &.active {
+    border-color: $color-primary;
+    background: rgba(212, 56, 13, 0.05);
+  }
+}
+
+.methodIcon {
+  font-size: 40rpx;
+  margin-bottom: $spacing-xs;
+}
+
+.methodText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  .active & {
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.footer {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.cancelBtn, .confirmBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.cancelBtn {
+  background: $color-bg-hover;
+  color: $color-text-secondary;
+}
+
+.confirmBtn {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+}

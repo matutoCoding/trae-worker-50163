@@ -1,0 +1,186 @@
+@use '@/styles/variables.scss' as *;
+
+.billItem {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+.billHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-md;
+}
+
+.billInfo {
+  flex: 1;
+}
+
+.roomName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.billMeta {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.billStatus {
+  padding: 4rpx 16rpx;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.open {
+  background: rgba(255, 125, 0, 0.1);
+  color: $color-warning;
+}
+
+.paid {
+  background: rgba(0, 180, 42, 0.1);
+  color: $color-success;
+}
+
+.closed {
+  background: rgba(134, 144, 156, 0.1);
+  color: $color-text-tertiary;
+}
+
+.billBody {
+  border-top: 1rpx solid $color-divider;
+  padding-top: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.itemList {
+  margin-bottom: $spacing-md;
+}
+
+.itemRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-xs 0;
+}
+
+.itemDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  flex: 1;
+}
+
+.itemAmount {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.billSummary {
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-xs 0;
+
+  &.total {
+    border-top: 1rpx solid $color-divider;
+    padding-top: $spacing-md;
+    margin-top: $spacing-xs;
+  }
+}
+
+.summaryLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.summaryValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.totalLabel {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.totalValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-price;
+}
+
+.billBadges {
+  display: flex;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-md;
+}
+
+.badge {
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+  border-radius: $radius-xs;
+}
+
+.startingPrice {
+  background: rgba(22, 93, 255, 0.1);
+  color: $color-info;
+}
+
+.ceilingPrice {
+  background: rgba(0, 180, 42, 0.1);
+  color: $color-success;
+}
+
+.overnightPrice {
+  background: rgba(114, 46, 209, 0.1);
+  color: $color-room-overnight;
+}
+
+.billFooter {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.actionBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-md;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.primary {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $color-text-white;
+  }
+
+  &.secondary {
+    background: $color-bg-hover;
+    color: $color-text-secondary;
+  }
+}

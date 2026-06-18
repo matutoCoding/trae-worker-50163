@@ -1,0 +1,232 @@
+@use '@/styles/variables.scss' as *;
+
+.queueWindow {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+}
+
+.windowHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.windowInfo {
+  display: flex;
+  align-items: center;
+}
+
+.windowNo {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-right: $spacing-sm;
+}
+
+.windowName {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.windowStatus {
+  padding: 6rpx 20rpx;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.active {
+  background: rgba(0, 180, 42, 0.1);
+  color: $color-success;
+}
+
+.paused {
+  background: rgba(255, 125, 0, 0.1);
+  color: $color-warning;
+}
+
+.inactive {
+  background: rgba(134, 144, 156, 0.1);
+  color: $color-text-tertiary;
+}
+
+.currentServing {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  text-align: center;
+}
+
+.servingLabel {
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: $spacing-xs;
+}
+
+.servingTicket {
+  font-size: 48rpx;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+  letter-spacing: 4rpx;
+}
+
+.noServing {
+  font-size: $font-size-md;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.windowStats {
+  display: flex;
+  justify-content: space-around;
+  padding: $spacing-md 0;
+  border-top: 1rpx solid $color-divider;
+  border-bottom: 1rpx solid $color-divider;
+  margin-bottom: $spacing-md;
+}
+
+.statItem {
+  text-align: center;
+}
+
+.statNum {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: 4rpx;
+}
+
+.statLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.loadBar {
+  margin-bottom: $spacing-md;
+}
+
+.loadLabel {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $spacing-xs;
+}
+
+.loadText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.loadLevel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
+.loadTrack {
+  height: 12rpx;
+  background: $color-bg-hover;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.loadFill {
+  height: 100%;
+  border-radius: $radius-round;
+  transition: width $transition-base;
+}
+
+.lowLoad {
+  background: $color-success;
+}
+
+.mediumLoad {
+  background: $color-info;
+}
+
+.highLoad {
+  background: $color-warning;
+}
+
+.criticalLoad {
+  background: $color-error;
+}
+
+.waitingList {
+  margin-bottom: $spacing-md;
+}
+
+.listTitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+.ticketList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.ticketChip {
+  padding: 6rpx 16rpx;
+  background: $color-bg-tag;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.noTickets {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  text-align: center;
+  padding: $spacing-md;
+}
+
+.actionButtons {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.actionBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-md;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.primary {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $color-text-white;
+  }
+
+  &.secondary {
+    background: $color-bg-hover;
+    color: $color-text-secondary;
+  }
+
+  &.recommended {
+    border: 2rpx solid $color-primary;
+    color: $color-primary;
+    background: rgba(212, 56, 13, 0.05);
+  }
+}
+
+.recommendedBadge {
+  display: inline-block;
+  background: $color-secondary;
+  color: $color-primary-dark;
+  font-size: 20rpx;
+  padding: 2rpx 10rpx;
+  border-radius: $radius-xs;
+  margin-left: $spacing-xs;
+}

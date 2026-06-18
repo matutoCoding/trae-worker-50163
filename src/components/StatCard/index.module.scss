@@ -1,0 +1,68 @@
+@use '@/styles/variables.scss' as *;
+
+.statCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  flex: 1;
+  min-width: 0;
+}
+
+.statHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.statLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.statIcon {
+  font-size: $font-size-lg;
+}
+
+.statValue {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.statSub {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.primary {
+  .statValue {
+    color: $color-primary;
+  }
+}
+
+.success {
+  .statValue {
+    color: $color-success;
+  }
+}
+
+.warning {
+  .statValue {
+    color: $color-warning;
+  }
+}
+
+.info {
+  .statValue {
+    color: $color-info;
+  }
+}
+
+.overnight {
+  .statValue {
+    color: $color-room-overnight;
+  }
+}
