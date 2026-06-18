@@ -15,6 +15,7 @@ const MemberCenterPage: React.FC = () => {
   const searchMembers = useMemberStore((s) => s.searchMembers);
   const getMemberLevelText = useMemberStore((s) => s.getMemberLevelText);
   const getMemberLevelColor = useMemberStore((s) => s.getMemberLevelColor);
+  const getLatestTransaction = useMemberStore((s) => s.getLatestTransaction);
   const bills = useBillingStore((s) => s.bills);
 
   const filteredMembers = useMemo(() => {
@@ -25,11 +26,13 @@ const MemberCenterPage: React.FC = () => {
     const memberBills = bills.filter(
       (b) => b.memberId === memberId && b.status === 'paid'
     );
+    const latestTx = getLatestTransaction(memberId);
     return {
       billCount: memberBills.length,
       recentBill: memberBills.sort(
         (a, b) => (b.closedAt || 0) - (a.closedAt || 0)
-      )[0]
+      )[0],
+      latestTx
     };
   };
 
@@ -121,11 +124,11 @@ const MemberCenterPage: React.FC = () => {
                       <Text className={styles.statsText}>
                         消费 {member.visitCount} 次
                       </Text>
-                      {stats.recentBill && (
+                      {stats.latestTx && (
                         <>
                           <Text className={styles.statsDot}>·</Text>
-                          <Text className={styles.statsText}>
-                            最近 {new Date(stats.recentBill.closedAt!).toLocaleDateString()}
+                          <Text className={classNames(styles.statsText, styles.latestTx)}>
+                            {stats.latestTx.type === 'recharge' ? '充值' : '消费'} {stats.latestTx.type === 'recharge' ? '+' : '-'}{formatCurrency(stats.latestTx.amount)}
                           </Text>
                         </>
                       )}

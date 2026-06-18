@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import styles from './index.module.scss';
 import { useMemberStore } from '@/store/memberStore';
 import { useBillingStore } from '@/store/billingStore';
-import { Member, Bill } from '@/types';
+import { Member, Bill, MemberTransaction } from '@/types';
 import { formatCurrency, formatDateTime, formatDuration } from '@/utils/format';
 import BillItem from '@/components/BillItem';
 import EmptyState from '@/components/EmptyState';
@@ -20,6 +20,12 @@ const MemberDetailPage: React.FC = () => {
   const recharge = useMemberStore((s) => s.recharge);
   const getMemberLevelText = useMemberStore((s) => s.getMemberLevelText);
   const getMemberLevelColor = useMemberStore((s) => s.getMemberLevelColor);
+  const getTransactionsByMember = useMemberStore((s) => s.getTransactionsByMember);
+  const canUpgrade = useMemberStore((s) => s.canUpgrade);
+  const getUpgradeProgress = useMemberStore((s) => s.getUpgradeProgress);
+  const getLevelUpgradeRule = useMemberStore((s) => s.getLevelUpgradeRule);
+  const getNextLevel = useMemberStore((s) => s.getNextLevel);
+
   const bills = useBillingStore((s) => s.bills);
   const getBillById = useBillingStore((s) => s.getBillById);
 
@@ -28,6 +34,7 @@ const MemberDetailPage: React.FC = () => {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState('');
   const [recharging, setRecharging] = useState(false);
+  const [activeTab, setActiveTab] = useState<'bills' | 'transactions'>('bills');
 
   useEffect(() => {
     if (!memberId) {
@@ -53,9 +60,29 @@ const MemberDetailPage: React.FC = () => {
       .sort((a, b) => (b.closedAt || 0) - (a.closedAt || 0));
   }, [memberId, bills]);
 
+  const transactions = useMemo(() => {
+    if (!memberId) return [];
+    return getTransactionsByMember(memberId);
+  }, [memberId, getTransactionsByMember]);
+
   const totalMemberSpent = useMemo(() => {
     return memberBills.reduce((sum: number, b: Bill) => sum + b.total, 0);
   }, [memberBills]);
+
+  const totalRecharged = useMemo(() => {
+    return transactions
+      .filter((t) => t.type === 'recharge')
+      .reduce((sum: number, t) => sum + t.amount, 0);
+  }, [transactions]);
+
+  const upgradeInfo = useMemo(() => {
+    if (!member) return null;
+    const next = canUpgrade(member);
+    const progress = getUpgradeProgress(member);
+    const nextLevel = getNextLevel(member.level);
+    const rule = nextLevel ? getLevelUpgradeRule(nextLevel) : undefined;
+    return { next, progress, nextLevel, rule };
+  }, [member, canUpgrade, getUpgradeProgress, getNextLevel, getLevelUpgradeRule]);
 
   const handleSelectAmount = (amount: number) => {
     setSelectedAmount(amount);
@@ -102,6 +129,26 @@ const MemberDetailPage: React.FC = () => {
     });
   };
 
+  const getTxTypeLabel = (type: string) => {
+    const map: Record<string, string> = {
+      recharge: '充值',
+      consume: '消费',
+      refund: '退款',
+      adjust: '调整'
+    };
+    return map[type] || type;
+  };
+
+  const getTxIcon = (type: string) => {
+    const map: Record<string, string> = {
+      recharge: '💰',
+      consume: '💸',
+      refund: '↩️',
+      adjust: '⚙️'
+    };
+    return map[type] || '📝';
+  };
+
   if (!member) {
     return (
       <View className={styles.page}>
@@ -137,6 +184,52 @@ const MemberDetailPage: React.FC = () => {
           </View>
         </View>
 
+        {upgradeInfo && upgradeInfo.next && (
+          <View className={styles.upgradeBanner}>
+            <Text className={styles.upgradeIcon}>🎉</Text>
+            <View className={styles.upgradeInfo}>
+              <Text className={styles.upgradeTitle}>
+                可升级为 {getMemberLevelText(upgradeInfo.next)}
+              </Text>
+              <Text className={styles.upgradeDesc}>
+                已满足累计消费和来店次数条件
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {upgradeInfo && upgradeInfo.progress && !upgradeInfo.next && (
+          <View className={styles.upgradeProgress}>
+            <Text className={styles.progressTitle}>
+              距离 {getMemberLevelText(upgradeInfo.progress.level)} 还差
+            </Text>
+            <View className={styles.progressBarRow}>
+              <Text className={styles.progressLabel}>累计消费</Text>
+              <View className={styles.progressWrap}>
+                <View
+                  className={styles.progressFill}
+                  style={{ width: `${upgradeInfo.progress.consumptionProgress}%` }}
+                />
+              </View>
+              <Text className={styles.progressText}>
+                {formatCurrency(member.totalConsumption)} / {formatCurrency(upgradeInfo.rule?.minConsumption || 0)}
+              </Text>
+            </View>
+            <View className={styles.progressBarRow}>
+              <Text className={styles.progressLabel}>来店次数</Text>
+              <View className={styles.progressWrap}>
+                <View
+                  className={classNames(styles.progressFill, styles.progressGold)}
+                  style={{ width: `${upgradeInfo.progress.visitProgress}%` }}
+                />
+              </View>
+              <Text className={styles.progressText}>
+                {member.visitCount} / {upgradeInfo.rule?.minVisits || 0} 次
+              </Text>
+            </View>
+          </View>
+        )}
+
         <View className={styles.balanceCard}>
           <View className={styles.balanceItem}>
             <Text className={styles.balanceLabel}>储值余额</Text>
@@ -154,6 +247,21 @@ const MemberDetailPage: React.FC = () => {
           </View>
         </View>
 
+        <View className={styles.quickStats}>
+          <View className={styles.quickItem}>
+            <Text className={styles.quickValue}>{formatCurrency(totalRecharged)}</Text>
+            <Text className={styles.quickLabel}>累计充值</Text>
+          </View>
+          <View className={styles.quickItem}>
+            <Text className={styles.quickValue}>{transactions.length}</Text>
+            <Text className={styles.quickLabel}>储值流水</Text>
+          </View>
+          <View className={styles.quickItem}>
+            <Text className={styles.quickValue}>{memberBills.length}</Text>
+            <Text className={styles.quickLabel}>消费笔数</Text>
+          </View>
+        </View>
+
         <Button className={styles.rechargeBtn} onClick={() => setShowRecharge(true)}>
           充值储值
         </Button>
@@ -161,27 +269,79 @@ const MemberDetailPage: React.FC = () => {
 
       <ScrollView className={styles.content} scrollY>
         <View className={styles.section}>
-          <View className={styles.sectionHeader}>
-            <Text className={styles.sectionTitle}>消费记录</Text>
-            <Text className={styles.sectionSub}>共 {memberBills.length} 笔</Text>
+          <View className={styles.tabBar}>
+            <Text
+              className={classNames(styles.tabItem, activeTab === 'bills' && styles.active)}
+              onClick={() => setActiveTab('bills')}
+            >
+              消费账单 ({memberBills.length})
+            </Text>
+            <Text
+              className={classNames(styles.tabItem, activeTab === 'transactions' && styles.active)}
+              onClick={() => setActiveTab('transactions')}
+            >
+              储值流水 ({transactions.length})
+            </Text>
           </View>
 
-          {memberBills.length > 0 ? (
-            <View className={styles.billList}>
-              {memberBills.map((bill) => (
-                <BillItem
-                  key={bill.id}
-                  bill={bill}
-                  onViewDetail={() => handleBillClick(bill.id)}
-                />
-              ))}
-            </View>
-          ) : (
-            <EmptyState
-              icon='📋'
-              title='暂无消费记录'
-              description='该会员还没有消费记录'
-            />
+          {activeTab === 'bills' && (
+            memberBills.length > 0 ? (
+              <View className={styles.billList}>
+                {memberBills.map((bill) => (
+                  <BillItem
+                    key={bill.id}
+                    bill={bill}
+                    onViewDetail={() => handleBillClick(bill.id)}
+                  />
+                ))}
+              </View>
+            ) : (
+              <EmptyState
+                icon='📋'
+                title='暂无消费记录'
+                description='该会员还没有消费记录'
+              />
+            )
+          )}
+
+          {activeTab === 'transactions' && (
+            transactions.length > 0 ? (
+              <View className={styles.txList}>
+                {transactions.map((tx) => (
+                  <View key={tx.id} className={styles.txItem}>
+                    <View className={styles.txIconWrap}>
+                      <Text className={styles.txIcon}>{getTxIcon(tx.type)}</Text>
+                    </View>
+                    <View className={styles.txInfo}>
+                      <Text className={styles.txTitle}>
+                        {getTxTypeLabel(tx.type)}
+                      </Text>
+                      <Text className={styles.txDesc}>{tx.description}</Text>
+                      <Text className={styles.txTime}>{formatDateTime(tx.createdAt)}</Text>
+                    </View>
+                    <View className={styles.txAmountWrap}>
+                      <Text
+                        className={classNames(
+                          styles.txAmount,
+                          tx.type === 'recharge' ? styles.positive : styles.negative
+                        )}
+                      >
+                        {tx.type === 'recharge' ? '+' : '-'}{formatCurrency(tx.amount)}
+                      </Text>
+                      <Text className={styles.txBalance}>
+                        余额 {formatCurrency(tx.balanceAfter)}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <EmptyState
+                icon='💰'
+                title='暂无储值流水'
+                description='该会员还没有储值变动记录'
+              />
+            )
           )}
         </View>
 

@@ -120,6 +120,240 @@
   }
 }
 
+.upgradeBanner {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  background: linear-gradient(135deg, $color-warn-bg 0%, rgba(255, 197, 61, 0.3) 100%);
+  border: 2rpx solid rgba(212, 136, 6, 0.3);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.upgradeIcon {
+  font-size: 40rpx;
+}
+
+.upgradeInfo {
+  flex: 1;
+}
+
+.upgradeTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-warn-text;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.upgradeDesc {
+  font-size: $font-size-xs;
+  color: rgba(212, 136, 6, 0.8);
+}
+
+.upgradeProgress {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.progressTitle {
+  font-size: $font-size-sm;
+  color: $color-text-white;
+  opacity: 0.9;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.progressBarRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-xs;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.progressLabel {
+  width: 120rpx;
+  font-size: $font-size-xs;
+  color: $color-text-white;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.progressWrap {
+  flex: 1;
+  height: 12rpx;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, $color-primary-light 0%, $color-primary 100%);
+  border-radius: $radius-round;
+  transition: width $transition-base;
+
+  &.progressGold {
+    background: linear-gradient(90deg, $color-secondary 0%, #faad14 100%);
+  }
+}
+
+.progressText {
+  width: 200rpx;
+  text-align: right;
+  font-size: $font-size-xs;
+  color: $color-text-white;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.quickStats {
+  display: flex;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.quickItem {
+  flex: 1;
+  text-align: center;
+  padding: $spacing-sm;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: $radius-md;
+}
+
+.quickValue {
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.quickLabel {
+  font-size: $font-size-xs;
+  opacity: 0.9;
+  color: $color-text-white;
+}
+
+.tabBar {
+  display: flex;
+  background: $color-bg-hover;
+  border-radius: $radius-button;
+  padding: 6rpx;
+  margin-bottom: $spacing-md;
+}
+
+.tabItem {
+  flex: 1;
+  text-align: center;
+  padding: $spacing-sm 0;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  border-radius: $radius-button;
+  transition: all $transition-base;
+
+  &.active {
+    background: $color-bg-card;
+    color: $color-primary;
+    font-weight: $font-weight-semibold;
+    box-shadow: $shadow-card;
+  }
+}
+
+.txList {
+  display: flex;
+  flex-direction: column;
+}
+
+.txItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md 0;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.txIconWrap {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: $color-bg-hover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.txIcon {
+  font-size: 32rpx;
+}
+
+.txInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.txTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.txDesc {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  display: block;
+  margin-bottom: 4rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.txTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.txAmountWrap {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.txAmount {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  display: block;
+  margin-bottom: 4rpx;
+
+  &.positive {
+    color: $color-success;
+  }
+
+  &.negative {
+    color: $color-primary;
+  }
+}
+
+.txBalance {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
 .content {
   flex: 1;
   padding: $page-padding;

@@ -1,17 +1,32 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, Input } from '@tarojs/components';
+import { View, Text, ScrollView, Input, Button } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classNames from 'classnames';
 import styles from './index.module.scss';
 import { useBillingStore } from '@/store/billingStore';
 import { useMemberStore } from '@/store/memberStore';
-import { Bill, RoomType, PaymentMethod } from '@/types';
-import { formatCurrency, formatDuration, getRoomTypeText, getPaymentMethodText } from '@/utils/format';
+import { Bill, RoomType, PaymentMethod, MemberTransaction } from '@/types';
+import {
+  formatCurrency,
+  formatDuration,
+  getRoomTypeText,
+  getPaymentMethodText,
+  formatDateTime
+} from '@/utils/format';
 import BillItem from '@/components/BillItem';
 import EmptyState from '@/components/EmptyState';
 
 type PeriodType = 'today' | 'week' | 'month' | 'custom';
-type FilterKey = 'all' | RoomType | PaymentMethod | 'member' | 'nonMember';
+type FilterKey =
+  | 'all'
+  | RoomType
+  | PaymentMethod
+  | 'member'
+  | 'nonMember'
+  | 'overnight'
+  | 'longDuration'
+  | 'shortDuration'
+  | 'memberRecharge';
 
 const PERIOD_OPTIONS: Array<{ key: PeriodType; label: string }> = [
   { key: 'today', label: '今日' },
@@ -20,7 +35,7 @@ const PERIOD_OPTIONS: Array<{ key: PeriodType; label: string }> = [
   { key: 'custom', label: '自定义' }
 ];
 
-const ROOM_TYPES: RoomType[] = ['standard', 'deluxe', 'vip', 'theme'];
+const ROOM_TYPES: RoomType[] = ['standard', 'deluxe', 'vip', 'presidential'];
 const PAYMENT_METHODS: PaymentMethod[] = ['cash', 'wechat', 'alipay', 'card', 'member'];
 
 const ReportPage: React.FC = () => {
@@ -36,6 +51,7 @@ const ReportPage: React.FC = () => {
   const [activeFilterKey, setActiveFilterKey] = useState<FilterKey>('all');
 
   const bills = useBillingStore((s) => s.bills);
+  const transactions = useMemberStore((s) => s.transactions);
   const getMemberById = useMemberStore((s) => s.getMemberById);
 
   const getPeriodRange = (period: PeriodType): [number, number] => {
@@ -83,9 +99,20 @@ const ReportPage: React.FC = () => {
     });
   }, [bills, startTime, endTime]);
 
+  const periodRecharges = useMemo(() => {
+    return transactions.filter((t) => {
+      if (t.type !== 'recharge') return false;
+      return t.createdAt >= startTime && t.createdAt <= endTime;
+    });
+  }, [transactions, startTime, endTime]);
+
   const totalRevenue = useMemo(() => {
     return periodBills.reduce((sum, b) => sum + b.total, 0);
   }, [periodBills]);
+
+  const totalRecharge = useMemo(() => {
+    return periodRecharges.reduce((sum, t) => sum + t.amount, 0);
+  }, [periodRecharges]);
 
   const billCount = periodBills.length;
 
@@ -145,15 +172,21 @@ const ReportPage: React.FC = () => {
   }, [periodBills, billCount, totalRevenue]);
 
   const filteredBills = useMemo(() => {
-    return periodBills.filter((b) => {
-      if (activeFilterKey === 'all') return true;
-      if (ROOM_TYPES.includes(activeFilterKey as RoomType)) return b.roomType === activeFilterKey;
-      if (PAYMENT_METHODS.includes(activeFilterKey as PaymentMethod)) return (b.paymentMethod || 'cash') === activeFilterKey;
-      if (activeFilterKey === 'member') return !!b.memberId;
-      if (activeFilterKey === 'nonMember') return !b.memberId;
-      return true;
-    });
-  }, [periodBills, activeFilterKey]);
+    let list = [...periodBills];
+    if (activeFilterKey === 'all') return list;
+    if ((ROOM_TYPES as string[]).includes(activeFilterKey as string))
+      return list.filter((b) => b.roomType === activeFilterKey);
+    if ((PAYMENT_METHODS as string[]).includes(activeFilterKey as string))
+      return list.filter((b) => (b.paymentMethod || 'cash') === activeFilterKey);
+    if (activeFilterKey === 'member') return list.filter((b) => !!b.memberId);
+    if (activeFilterKey === 'nonMember') return list.filter((b) => !b.memberId);
+    if (activeFilterKey === 'overnight') return list.filter((b) => b.overnightApplied);
+    if (activeFilterKey === 'longDuration')
+      return list.filter((b) => (b.durationMinutes || 0) >= avgDuration && avgDuration > 0);
+    if (activeFilterKey === 'shortDuration')
+      return list.filter((b) => (b.durationMinutes || 0) < avgDuration);
+    return list;
+  }, [periodBills, activeFilterKey, avgDuration]);
 
   const handleViewBills = () => {
     setShowBillList(!showBillList);
@@ -171,11 +204,17 @@ const ReportPage: React.FC = () => {
 
   const getFilterLabel = (key: FilterKey): string => {
     if (key === 'all') return '全部';
-    if (ROOM_TYPES.includes(key as RoomType)) return getRoomTypeText(key as RoomType);
-    if (PAYMENT_METHODS.includes(key as PaymentMethod)) return getPaymentMethodText(key as PaymentMethod);
-    if (key === 'member') return '会员消费';
-    if (key === 'nonMember') return '非会员';
-    return '';
+    if ((ROOM_TYPES as string[]).includes(key as string)) return getRoomTypeText(key as RoomType);
+    if ((PAYMENT_METHODS as string[]).includes(key as string)) return getPaymentMethodText(key as PaymentMethod);
+    const labelMap: Record<string, string> = {
+      member: '会员消费',
+      nonMember: '非会员消费',
+      overnight: '包夜账单',
+      longDuration: `长时消费（≥${formatDuration(avgDuration)}）`,
+      shortDuration: `短时消费（<${formatDuration(avgDuration)}）`,
+      memberRecharge: '会员充值'
+    };
+    return labelMap[key] || '';
   };
 
   const isActiveFilter = (key: FilterKey) => activeFilterKey === key;
@@ -183,10 +222,83 @@ const ReportPage: React.FC = () => {
   const maxRoomRevenue = Math.max(...roomTypeStats.map((s) => s.revenue), 1);
   const maxPaymentRevenue = Math.max(...paymentStats.map((s) => s.revenue), 1);
 
+  const generateReportText = (): string => {
+    const periodLabel = PERIOD_OPTIONS.find((p) => p.key === activePeriod)?.label || '自定义';
+    const dateRange = `${new Date(startTime).toLocaleDateString()} ~ ${new Date(endTime).toLocaleDateString()}`;
+
+    let text = `【棋牌室经营报表 - ${periodLabel}】\n`;
+    text += `统计周期：${dateRange}\n`;
+    text += `生成时间：${new Date().toLocaleString()}\n`;
+    text += '-----------------------------------\n';
+    text += `总营收：${formatCurrency(totalRevenue)}\n`;
+    text += `订单数：${billCount} 笔\n`;
+    text += `平均时长：${formatDuration(avgDuration)}\n`;
+    text += `包夜占比：${overnightRatio}%\n`;
+    text += `会员储值充值：${formatCurrency(totalRecharge)} (${periodRecharges.length} 笔)\n`;
+    text += '\n--- 支付方式汇总 ---\n';
+    paymentStats.forEach((p) => {
+      text += `${getPaymentMethodText(p.method)}：${formatCurrency(p.revenue)} (${p.count}笔)\n`;
+    });
+    text += '\n--- 包间类型汇总 ---\n';
+    roomTypeStats.forEach((r) => {
+      text += `${getRoomTypeText(r.type)}：${formatCurrency(r.revenue)} (${r.count}笔)\n`;
+    });
+    if (activeFilterKey !== 'all' && filteredBills.length > 0) {
+      text += `\n--- 当前筛选：${getFilterLabel(activeFilterKey)} (${filteredBills.length}笔) ---\n`;
+      filteredBills.forEach((b, i) => {
+        const methodText = b.paymentMethod ? getPaymentMethodText(b.paymentMethod) : '现金';
+        text += `${i + 1}. ${b.roomName} ${formatCurrency(b.total)} ${methodText} ${formatDuration(b.durationMinutes || 0)}\n`;
+      });
+    }
+    return text;
+  };
+
+  const handleCopyReport = async () => {
+    const text = generateReportText();
+    try {
+      await Taro.setClipboardData({ data: text });
+      Taro.showToast({ title: '报表已复制', icon: 'success' });
+    } catch (e) {
+      Taro.showModal({
+        title: '报表数据',
+        content: text,
+        showCancel: false
+      });
+    }
+  };
+
+  const handleExportBills = async () => {
+    let text = `【账单明细 - ${PERIOD_OPTIONS.find((p) => p.key === activePeriod)?.label || '自定义'}】\n`;
+    text += `包间,开台时间,结账时间,时长,金额,支付方式,会员\n`;
+    (activeFilterKey !== 'all' ? filteredBills : periodBills).forEach((b) => {
+      const memberText = b.memberName ? `${b.memberName}(${b.memberNo || b.memberId})` : '散客';
+      text += `${b.roomName},${formatDateTime(b.startTime)},${formatDateTime(b.closedAt || 0)},${formatDuration(b.durationMinutes || 0)},${b.total.toFixed(2)},${getPaymentMethodText(b.paymentMethod || 'cash')},${memberText}\n`;
+    });
+    try {
+      await Taro.setClipboardData({ data: text });
+      Taro.showToast({ title: '账单明细已复制', icon: 'success' });
+    } catch (e) {
+      Taro.showModal({
+        title: '账单明细 (CSV)',
+        content: text,
+        showCancel: false
+      });
+    }
+  };
+
+  const isRechargeView = activeFilterKey === 'memberRecharge';
+
   return (
     <View className={styles.page}>
       <View className={styles.header}>
-        <Text className={styles.pageTitle}>经营报表</Text>
+        <View className={styles.headerRow}>
+          <Text className={styles.pageTitle}>经营报表</Text>
+          <View className={styles.headerActions}>
+            <Text className={styles.actionBtn} onClick={handleCopyReport}>
+              📋 复制报表
+            </Text>
+          </View>
+        </View>
         <View className={styles.periodTabs}>
           {PERIOD_OPTIONS.map((opt) => (
             <Text
@@ -243,7 +355,7 @@ const ReportPage: React.FC = () => {
             </Text>
             <Text className={styles.metaDivider}>·</Text>
             <Text className={styles.metaItem}>
-              筛选 {filteredBills.length} 条
+              储值充值 {formatCurrency(totalRecharge)}
             </Text>
           </View>
         </View>
@@ -257,15 +369,23 @@ const ReportPage: React.FC = () => {
             <Text className={styles.statValue}>{billCount}</Text>
             <Text className={styles.statLabel}>开台次数</Text>
           </View>
-          <View className={styles.statCard}>
+          <View
+            className={classNames(styles.statCard, isActiveFilter('overnight') && styles.cardActive)}
+            onClick={() => handleFilterClick('overnight')}
+          >
             <Text className={styles.statIcon}>🌙</Text>
             <Text className={styles.statValue}>{overnightRatio}%</Text>
             <Text className={styles.statLabel}>包夜占比</Text>
+            <Text className={styles.statHint}>点击查看包夜账单</Text>
           </View>
-          <View className={styles.statCard}>
+          <View
+            className={classNames(styles.statCard, isActiveFilter('longDuration') && styles.cardActive)}
+            onClick={() => avgDuration > 0 && handleFilterClick('longDuration')}
+          >
             <Text className={styles.statIcon}>⏱️</Text>
             <Text className={styles.statValue}>{formatDuration(avgDuration)}</Text>
             <Text className={styles.statLabel}>平均时长</Text>
+            <Text className={styles.statHint}>点击查看长时消费</Text>
           </View>
           <View
             className={classNames(styles.statCard, popularType && isActiveFilter(popularType.type) && styles.cardActive)}
@@ -303,12 +423,64 @@ const ReportPage: React.FC = () => {
             <Text className={styles.statLabel}>散客订单</Text>
           </View>
           <View
-            className={classNames(styles.statCard, isActiveFilter('member') && styles.cardActive)}
-            onClick={() => handleFilterClick('member')}
+            className={classNames(styles.statCard, isActiveFilter('memberRecharge') && styles.cardActive)}
+            onClick={() => handleFilterClick('memberRecharge')}
           >
             <Text className={styles.statIcon}>💎</Text>
-            <Text className={styles.statValue}>{formatCurrency(memberStats.revenue)}</Text>
-            <Text className={styles.statLabel}>会员消费额</Text>
+            <Text className={styles.statValue}>{formatCurrency(totalRecharge)}</Text>
+            <Text className={styles.statLabel}>储值充值额</Text>
+          </View>
+        </View>
+
+        <View className={styles.section}>
+          <View className={styles.sectionHeader}>
+            <Text className={styles.sectionTitle}>对账汇总</Text>
+            <Text className={styles.sectionHint}>支付方式 + 储值充值</Text>
+          </View>
+
+          <View className={styles.reconcileGrid}>
+            {PAYMENT_METHODS.map((m) => {
+              const stat = paymentStats.find((p) => p.method === m);
+              return (
+                <View
+                  key={m}
+                  className={classNames(
+                    styles.reconcileItem,
+                    isActiveFilter(m) && styles.reconcileActive
+                  )}
+                  onClick={() => handleFilterClick(m)}
+                >
+                  <Text className={styles.reconcileLabel}>{getPaymentMethodText(m)}</Text>
+                  <Text className={styles.reconcileValue}>
+                    {formatCurrency(stat?.revenue || 0)}
+                  </Text>
+                  <Text className={styles.reconcileCount}>{stat?.count || 0} 笔</Text>
+                </View>
+              );
+            })}
+            <View
+              className={classNames(
+                styles.reconcileItem,
+                styles.reconcileRecharge,
+                isActiveFilter('memberRecharge') && styles.reconcileActive
+              )}
+              onClick={() => handleFilterClick('memberRecharge')}
+            >
+              <Text className={styles.reconcileLabel}>💳 储值充值</Text>
+              <Text className={styles.reconcileValue}>
+                {formatCurrency(totalRecharge)}
+              </Text>
+              <Text className={styles.reconcileCount}>{periodRecharges.length} 笔</Text>
+            </View>
+          </View>
+
+          <View className={styles.reconcileTotal}>
+            <Text className={styles.reconcileTotalLabel}>
+              合计（含充值）
+            </Text>
+            <Text className={styles.reconcileTotalValue}>
+              {formatCurrency(totalRevenue + totalRecharge)}
+            </Text>
           </View>
         </View>
 
@@ -428,6 +600,24 @@ const ReportPage: React.FC = () => {
             >
               🎯 散客
             </Text>
+            <Text
+              className={classNames(styles.chip, isActiveFilter('overnight') && styles.chipActive)}
+              onClick={() => handleFilterClick('overnight')}
+            >
+              🌙 包夜
+            </Text>
+            <Text
+              className={classNames(styles.chip, isActiveFilter('longDuration') && styles.chipActive)}
+              onClick={() => avgDuration > 0 && handleFilterClick('longDuration')}
+            >
+              ⏱️ 长时
+            </Text>
+            <Text
+              className={classNames(styles.chip, isActiveFilter('shortDuration') && styles.chipActive)}
+              onClick={() => avgDuration > 0 && handleFilterClick('shortDuration')}
+            >
+              ⚡ 短时
+            </Text>
           </View>
           <View className={styles.filterChips}>
             {ROOM_TYPES.map((t) => (
@@ -455,10 +645,20 @@ const ReportPage: React.FC = () => {
 
         <View className={styles.section}>
           <View className={styles.sectionHeader}>
-            <Text className={styles.sectionTitle}>账单明细</Text>
-            <Text className={styles.toggleText} onClick={handleViewBills}>
-              {showBillList ? '收起' : `查看全部 (${filteredBills.length})`}
+            <Text className={styles.sectionTitle}>
+              {isRechargeView ? '储值充值明细' : '账单明细'}
             </Text>
+            <View className={styles.sectionActions}>
+              <Text
+                className={styles.exportBtn}
+                onClick={handleExportBills}
+              >
+                📤 导出
+              </Text>
+              <Text className={styles.toggleText} onClick={handleViewBills}>
+                {showBillList ? '收起' : `查看 (${isRechargeView ? periodRecharges.length : filteredBills.length})`}
+              </Text>
+            </View>
           </View>
           {activeFilterKey !== 'all' && (
             <View className={styles.activeFilterTag}>
@@ -469,13 +669,48 @@ const ReportPage: React.FC = () => {
               </Text>
             </View>
           )}
-          {showBillList && (
+          {showBillList && isRechargeView && (
+            periodRecharges.length > 0 ? (
+              <View className={styles.billList}>
+                {periodRecharges.map((tx) => {
+                  const member = getMemberById(tx.memberId);
+                  return (
+                    <View key={tx.id} className={styles.rechargeItem}>
+                      <View className={styles.rechargeLeft}>
+                        <Text className={styles.rechargeIcon}>💰</Text>
+                        <View>
+                          <Text className={styles.rechargeTitle}>
+                            {member?.name || '会员'} 储值充值
+                          </Text>
+                          <Text className={styles.rechargeMeta}>
+                            {member?.memberNo} · {formatDateTime(tx.createdAt)}
+                          </Text>
+                        </View>
+                      </View>
+                      <View className={styles.rechargeRight}>
+                        <Text className={styles.rechargeAmount}>
+                          +{formatCurrency(tx.amount)}
+                        </Text>
+                        <Text className={styles.rechargeBalance}>
+                          余额 {formatCurrency(tx.balanceAfter)}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <EmptyState icon="💎" title="暂无充值记录" description="该时间段内暂无会员储值充值" />
+            )
+          )}
+          {showBillList && !isRechargeView && (
             filteredBills.length > 0 ? (
               <View className={styles.billList}>
                 {filteredBills.map((bill) => (
                   <BillItem
                     key={bill.id}
                     bill={bill}
+                    onViewDetail={() => handleBillDetail(bill.id)}
                   />
                 ))}
               </View>

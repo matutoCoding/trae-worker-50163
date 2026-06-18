@@ -162,6 +162,11 @@
 .statsText {
   font-size: $font-size-xs;
   color: $color-text-secondary;
+
+  &.latestTx {
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+  }
 }
 
 .statsDot {

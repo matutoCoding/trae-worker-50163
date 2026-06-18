@@ -4,6 +4,20 @@ export type RoomType = 'standard' | 'deluxe' | 'vip' | 'presidential';
 
 export type MemberLevel = 'normal' | 'silver' | 'gold' | 'diamond';
 
+export type TransactionType = 'recharge' | 'consume' | 'refund' | 'adjust';
+
+export interface MemberTransaction {
+  id: string;
+  memberId: string;
+  type: TransactionType;
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  description: string;
+  relatedBillId?: string;
+  createdAt: number;
+}
+
 export interface Member {
   id: string;
   memberNo: string;

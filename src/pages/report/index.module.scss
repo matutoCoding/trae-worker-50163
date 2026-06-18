@@ -13,6 +13,30 @@
   color: $color-text-white;
 }
 
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.headerActions {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.actionBtn {
+  padding: $spacing-xs $spacing-md;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  color: $color-text-white;
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
 .pageTitle {
   font-size: $font-size-xxl;
   font-weight: $font-weight-bold;
@@ -155,7 +179,15 @@
 
 .statLabel {
   font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.statHint {
+  font-size: 20rpx;
   color: $color-text-tertiary;
+  display: block;
+  margin-top: 4rpx;
+  opacity: 0.75;
 }
 
 .section {
@@ -403,4 +435,166 @@
   font-size: $font-size-xs;
   color: $color-text-tertiary;
   padding: $spacing-xs;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.sectionActions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.exportBtn {
+  font-size: $font-size-xs;
+  color: $color-primary;
+  padding: $spacing-xs $spacing-sm;
+  background: rgba(212, 56, 13, 0.08);
+  border-radius: $radius-sm;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.reconcileGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.reconcileItem {
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: $spacing-sm $spacing-md;
+  text-align: center;
+  border: 2rpx solid transparent;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+  }
+
+  &.reconcileActive {
+    border-color: $color-primary;
+    background: rgba(212, 56, 13, 0.05);
+  }
+
+  &.reconcileRecharge {
+    background: rgba(230, 162, 60, 0.08);
+    border-color: transparent;
+
+    &.reconcileActive {
+      border-color: $color-warn-text;
+      background: rgba(230, 162, 60, 0.15);
+    }
+  }
+}
+
+.reconcileLabel {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.reconcileValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.reconcileCount {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+}
+
+.reconcileTotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-sm $spacing-md;
+  background: linear-gradient(135deg, rgba(212, 56, 13, 0.08) 0%, rgba(212, 56, 13, 0.02) 100%);
+  border-radius: $radius-md;
+}
+
+.reconcileTotalLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+}
+
+.reconcileTotalValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.rechargeItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md 0;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.rechargeLeft {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.rechargeIcon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: $color-warn-bg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+}
+
+.rechargeTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.rechargeMeta {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.rechargeRight {
+  text-align: right;
+}
+
+.rechargeAmount {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-success;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.rechargeBalance {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
 }
