@@ -1,28 +1,42 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, ScrollView } from '@tarojs/components';
+import React, { useState, useMemo } from 'react';
+import { View, Text, ScrollView, Input } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classNames from 'classnames';
 import styles from './index.module.scss';
 import { useBillingStore } from '@/store/billingStore';
-import { Bill, RoomType } from '@/types';
-import { formatCurrency, formatDuration, getRoomTypeText } from '@/utils/format';
+import { useMemberStore } from '@/store/memberStore';
+import { Bill, RoomType, PaymentMethod } from '@/types';
+import { formatCurrency, formatDuration, getRoomTypeText, getPaymentMethodText } from '@/utils/format';
 import BillItem from '@/components/BillItem';
 import EmptyState from '@/components/EmptyState';
 
-type PeriodType = 'today' | 'week' | 'month';
+type PeriodType = 'today' | 'week' | 'month' | 'custom';
+type FilterKey = 'all' | RoomType | PaymentMethod | 'member' | 'nonMember';
 
 const PERIOD_OPTIONS: Array<{ key: PeriodType; label: string }> = [
   { key: 'today', label: '今日' },
   { key: 'week', label: '本周' },
-  { key: 'month', label: '本月' }
+  { key: 'month', label: '本月' },
+  { key: 'custom', label: '自定义' }
 ];
+
+const ROOM_TYPES: RoomType[] = ['standard', 'deluxe', 'vip', 'theme'];
+const PAYMENT_METHODS: PaymentMethod[] = ['cash', 'wechat', 'alipay', 'card', 'member'];
 
 const ReportPage: React.FC = () => {
   const [activePeriod, setActivePeriod] = useState<PeriodType>('today');
-  const [showBillList, setShowBillList] = useState(false);
+  const [customStart, setCustomStart] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return d.toISOString().slice(0, 10);
+  });
+  const [customEnd, setCustomEnd] = useState(() => new Date().toISOString().slice(0, 10));
+  const [showBillList, setShowBillList] = useState(true);
+
+  const [activeFilterKey, setActiveFilterKey] = useState<FilterKey>('all');
 
   const bills = useBillingStore((s) => s.bills);
-  const getBillById = useBillingStore((s) => s.getBillById);
+  const getMemberById = useMemberStore((s) => s.getMemberById);
 
   const getPeriodRange = (period: PeriodType): [number, number] => {
     const now = new Date();
@@ -38,18 +52,27 @@ const ReportPage: React.FC = () => {
     if (period === 'week') {
       const day = now.getDay();
       const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      const start = new Date(now.setDate(diff));
+      const start = new Date(now);
+      start.setDate(diff);
       start.setHours(0, 0, 0, 0);
       return [start.getTime(), end.getTime()];
     }
 
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    return [start.getTime(), end.getTime()];
+    if (period === 'month') {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      return [start.getTime(), end.getTime()];
+    }
+
+    const s = new Date(customStart);
+    s.setHours(0, 0, 0, 0);
+    const e = new Date(customEnd);
+    e.setHours(23, 59, 59, 999);
+    return [s.getTime(), e.getTime()];
   };
 
   const [startTime, endTime] = useMemo(
     () => getPeriodRange(activePeriod),
-    [activePeriod]
+    [activePeriod, customStart, customEnd]
   );
 
   const periodBills = useMemo(() => {
@@ -76,13 +99,13 @@ const ReportPage: React.FC = () => {
   }, [billCount, overnightCount]);
 
   const roomTypeStats = useMemo(() => {
-    const map = new Map<RoomType, number>();
+    const map = new Map<RoomType, { count: number; revenue: number }>();
     periodBills.forEach((b) => {
-      const count = map.get(b.roomType) || 0;
-      map.set(b.roomType, count + 1);
+      const existing = map.get(b.roomType) || { count: 0, revenue: 0 };
+      map.set(b.roomType, { count: existing.count + 1, revenue: existing.revenue + b.total });
     });
     return Array.from(map.entries())
-      .map(([type, count]) => ({ type, count }))
+      .map(([type, data]) => ({ type, count: data.count, revenue: data.revenue }))
       .sort((a, b) => b.count - a.count);
   }, [periodBills]);
 
@@ -97,6 +120,41 @@ const ReportPage: React.FC = () => {
     return Math.round(totalDuration / billCount);
   }, [billCount, totalDuration]);
 
+  const paymentStats = useMemo(() => {
+    const map = new Map<PaymentMethod, { count: number; revenue: number }>();
+    periodBills.forEach((b) => {
+      const method = b.paymentMethod || 'cash';
+      const existing = map.get(method) || { count: 0, revenue: 0 };
+      map.set(method, { count: existing.count + 1, revenue: existing.revenue + b.total });
+    });
+    return Array.from(map.entries())
+      .map(([method, data]) => ({ method, count: data.count, revenue: data.revenue }))
+      .sort((a, b) => b.revenue - a.revenue);
+  }, [periodBills]);
+
+  const memberStats = useMemo(() => {
+    const memberBills = periodBills.filter((b) => b.memberId);
+    const memberRevenue = memberBills.reduce((sum, b) => sum + b.total, 0);
+    const count = memberBills.length;
+    return {
+      count,
+      revenue: memberRevenue,
+      countRatio: billCount > 0 ? Math.round((count / billCount) * 100) : 0,
+      revenueRatio: totalRevenue > 0 ? Math.round((memberRevenue / totalRevenue) * 100) : 0
+    };
+  }, [periodBills, billCount, totalRevenue]);
+
+  const filteredBills = useMemo(() => {
+    return periodBills.filter((b) => {
+      if (activeFilterKey === 'all') return true;
+      if (ROOM_TYPES.includes(activeFilterKey as RoomType)) return b.roomType === activeFilterKey;
+      if (PAYMENT_METHODS.includes(activeFilterKey as PaymentMethod)) return (b.paymentMethod || 'cash') === activeFilterKey;
+      if (activeFilterKey === 'member') return !!b.memberId;
+      if (activeFilterKey === 'nonMember') return !b.memberId;
+      return true;
+    });
+  }, [periodBills, activeFilterKey]);
+
   const handleViewBills = () => {
     setShowBillList(!showBillList);
   };
@@ -106,6 +164,24 @@ const ReportPage: React.FC = () => {
       url: `/pages/billDetail/index?id=${billId}`
     });
   };
+
+  const handleFilterClick = (key: FilterKey) => {
+    setActiveFilterKey(activeFilterKey === key ? 'all' : key);
+  };
+
+  const getFilterLabel = (key: FilterKey): string => {
+    if (key === 'all') return '全部';
+    if (ROOM_TYPES.includes(key as RoomType)) return getRoomTypeText(key as RoomType);
+    if (PAYMENT_METHODS.includes(key as PaymentMethod)) return getPaymentMethodText(key as PaymentMethod);
+    if (key === 'member') return '会员消费';
+    if (key === 'nonMember') return '非会员';
+    return '';
+  };
+
+  const isActiveFilter = (key: FilterKey) => activeFilterKey === key;
+
+  const maxRoomRevenue = Math.max(...roomTypeStats.map((s) => s.revenue), 1);
+  const maxPaymentRevenue = Math.max(...paymentStats.map((s) => s.revenue), 1);
 
   return (
     <View className={styles.page}>
@@ -125,6 +201,32 @@ const ReportPage: React.FC = () => {
             </Text>
           ))}
         </View>
+
+        {activePeriod === 'custom' && (
+          <View className={styles.customRange}>
+            <View className={styles.dateInput}>
+              <Text className={styles.dateLabel}>开始</Text>
+              <Input
+                type='text'
+                className={styles.dateField}
+                value={customStart}
+                onInput={(e) => setCustomStart(e.detail.value)}
+                placeholder='YYYY-MM-DD'
+              />
+            </View>
+            <Text className={styles.dateSep}>~</Text>
+            <View className={styles.dateInput}>
+              <Text className={styles.dateLabel}>结束</Text>
+              <Input
+                type='text'
+                className={styles.dateField}
+                value={customEnd}
+                onInput={(e) => setCustomEnd(e.detail.value)}
+                placeholder='YYYY-MM-DD'
+              />
+            </View>
+          </View>
+        )}
       </View>
 
       <ScrollView className={styles.content} scrollY>
@@ -139,11 +241,18 @@ const ReportPage: React.FC = () => {
             <Text className={styles.metaItem}>
               平均 {formatDuration(avgDuration)}
             </Text>
+            <Text className={styles.metaDivider}>·</Text>
+            <Text className={styles.metaItem}>
+              筛选 {filteredBills.length} 条
+            </Text>
           </View>
         </View>
 
         <View className={styles.statsGrid}>
-          <View className={styles.statCard}>
+          <View
+            className={classNames(styles.statCard, isActiveFilter('all') && styles.cardActive)}
+            onClick={() => handleFilterClick('all')}
+          >
             <Text className={styles.statIcon}>📋</Text>
             <Text className={styles.statValue}>{billCount}</Text>
             <Text className={styles.statLabel}>开台次数</Text>
@@ -158,23 +267,68 @@ const ReportPage: React.FC = () => {
             <Text className={styles.statValue}>{formatDuration(avgDuration)}</Text>
             <Text className={styles.statLabel}>平均时长</Text>
           </View>
-          <View className={styles.statCard}>
+          <View
+            className={classNames(styles.statCard, popularType && isActiveFilter(popularType.type) && styles.cardActive)}
+            onClick={() => popularType && handleFilterClick(popularType.type)}
+          >
             <Text className={styles.statIcon}>🏆</Text>
             <Text className={styles.statValue}>{popularType ? getRoomTypeText(popularType.type) : '-'}</Text>
             <Text className={styles.statLabel}>热门类型</Text>
           </View>
         </View>
 
+        <View className={styles.statsGrid}>
+          <View
+            className={classNames(styles.statCard, isActiveFilter('member') && styles.cardActive)}
+            onClick={() => handleFilterClick('member')}
+          >
+            <Text className={styles.statIcon}>👑</Text>
+            <Text className={styles.statValue}>{memberStats.countRatio}%</Text>
+            <Text className={styles.statLabel}>会员订单占比</Text>
+          </View>
+          <View
+            className={classNames(styles.statCard, isActiveFilter('member') && styles.cardActive)}
+            onClick={() => handleFilterClick('member')}
+          >
+            <Text className={styles.statIcon}>💰</Text>
+            <Text className={styles.statValue}>{memberStats.revenueRatio}%</Text>
+            <Text className={styles.statLabel}>会员营收占比</Text>
+          </View>
+          <View
+            className={classNames(styles.statCard, isActiveFilter('nonMember') && styles.cardActive)}
+            onClick={() => handleFilterClick('nonMember')}
+          >
+            <Text className={styles.statIcon}>🎯</Text>
+            <Text className={styles.statValue}>{billCount - memberStats.count}</Text>
+            <Text className={styles.statLabel}>散客订单</Text>
+          </View>
+          <View
+            className={classNames(styles.statCard, isActiveFilter('member') && styles.cardActive)}
+            onClick={() => handleFilterClick('member')}
+          >
+            <Text className={styles.statIcon}>💎</Text>
+            <Text className={styles.statValue}>{formatCurrency(memberStats.revenue)}</Text>
+            <Text className={styles.statLabel}>会员消费额</Text>
+          </View>
+        </View>
+
         <View className={styles.section}>
           <View className={styles.sectionHeader}>
             <Text className={styles.sectionTitle}>包间类型分布</Text>
+            <Text className={styles.sectionHint}>点击类型可筛选账单</Text>
           </View>
           {roomTypeStats.length > 0 ? (
             <View className={styles.typeList}>
               {roomTypeStats.map((item, index) => {
                 const percentage = billCount > 0 ? Math.round((item.count / billCount) * 100) : 0;
+                const revenuePercent = Math.round((item.revenue / maxRoomRevenue) * 100);
+                const active = isActiveFilter(item.type);
                 return (
-                  <View key={item.type} className={styles.typeItem}>
+                  <View
+                    key={item.type}
+                    className={classNames(styles.typeItem, active && styles.active)}
+                    onClick={() => handleFilterClick(item.type)}
+                  >
                     <View className={styles.typeHeader}>
                       <View className={styles.typeLeft}>
                         <Text className={styles.typeRank}>{index + 1}</Text>
@@ -183,6 +337,7 @@ const ReportPage: React.FC = () => {
                       <View className={styles.typeRight}>
                         <Text className={styles.typeCount}>{item.count} 笔</Text>
                         <Text className={styles.typePercent}>{percentage}%</Text>
+                        <Text className={styles.typeRevenue}>{formatCurrency(item.revenue)}</Text>
                       </View>
                     </View>
                     <View className={styles.progressBar}>
@@ -191,7 +346,7 @@ const ReportPage: React.FC = () => {
                           styles.progressFill,
                           index === 0 && styles.first
                         )}
-                        style={{ width: `${percentage}%` }}
+                        style={{ width: `${revenuePercent}%` }}
                       />
                     </View>
                   </View>
@@ -205,15 +360,119 @@ const ReportPage: React.FC = () => {
 
         <View className={styles.section}>
           <View className={styles.sectionHeader}>
-            <Text className={styles.sectionTitle}>账单明细</Text>
-            <Text className={styles.toggleText} onClick={handleViewBills}>
-              {showBillList ? '收起' : `查看全部 (${billCount})`}
+            <Text className={styles.sectionTitle}>支付方式分布</Text>
+            <Text className={styles.sectionHint}>点击方式可筛选账单</Text>
+          </View>
+          {paymentStats.length > 0 ? (
+            <View className={styles.typeList}>
+              {paymentStats.map((item, index) => {
+                const countPercent = billCount > 0 ? Math.round((item.count / billCount) * 100) : 0;
+                const revenuePercent = Math.round((item.revenue / maxPaymentRevenue) * 100);
+                const active = isActiveFilter(item.method);
+                return (
+                  <View
+                    key={item.method}
+                    className={classNames(styles.typeItem, active && styles.active)}
+                    onClick={() => handleFilterClick(item.method)}
+                  >
+                    <View className={styles.typeHeader}>
+                      <View className={styles.typeLeft}>
+                        <Text className={styles.typeRank}>{index + 1}</Text>
+                        <Text className={styles.typeName}>{getPaymentMethodText(item.method)}</Text>
+                        {item.method === 'member' && (
+                          <Text className={styles.memberBadge}>储值</Text>
+                        )}
+                      </View>
+                      <View className={styles.typeRight}>
+                        <Text className={styles.typeCount}>{item.count} 笔</Text>
+                        <Text className={styles.typePercent}>{countPercent}%</Text>
+                        <Text className={styles.typeRevenue}>{formatCurrency(item.revenue)}</Text>
+                      </View>
+                    </View>
+                    <View className={styles.progressBar}>
+                      <View
+                        className={classNames(
+                          styles.progressFill,
+                          item.method === 'member' && styles.member
+                        )}
+                        style={{ width: `${revenuePercent}%` }}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          ) : (
+            <EmptyState icon="💳" title="暂无支付数据" description="该时间段内暂无支付记录" />
+          )}
+        </View>
+
+        <View className={styles.filterBar}>
+          <Text className={styles.filterTitle}>筛选条件</Text>
+          <View className={styles.filterChips}>
+            <Text
+              className={classNames(styles.chip, isActiveFilter('all') && styles.chipActive)}
+              onClick={() => handleFilterClick('all')}
+            >
+              全部
+            </Text>
+            <Text
+              className={classNames(styles.chip, isActiveFilter('member') && styles.chipActive)}
+              onClick={() => handleFilterClick('member')}
+            >
+              👑 会员
+            </Text>
+            <Text
+              className={classNames(styles.chip, isActiveFilter('nonMember') && styles.chipActive)}
+              onClick={() => handleFilterClick('nonMember')}
+            >
+              🎯 散客
             </Text>
           </View>
+          <View className={styles.filterChips}>
+            {ROOM_TYPES.map((t) => (
+              <Text
+                key={t}
+                className={classNames(styles.chip, isActiveFilter(t) && styles.chipActive)}
+                onClick={() => handleFilterClick(t)}
+              >
+                {getRoomTypeText(t)}
+              </Text>
+            ))}
+          </View>
+          <View className={styles.filterChips}>
+            {PAYMENT_METHODS.map((m) => (
+              <Text
+                key={m}
+                className={classNames(styles.chip, isActiveFilter(m) && styles.chipActive)}
+                onClick={() => handleFilterClick(m)}
+              >
+                {getPaymentMethodText(m)}
+              </Text>
+            ))}
+          </View>
+        </View>
+
+        <View className={styles.section}>
+          <View className={styles.sectionHeader}>
+            <Text className={styles.sectionTitle}>账单明细</Text>
+            <Text className={styles.toggleText} onClick={handleViewBills}>
+              {showBillList ? '收起' : `查看全部 (${filteredBills.length})`}
+            </Text>
+          </View>
+          {activeFilterKey !== 'all' && (
+            <View className={styles.activeFilterTag}>
+              <Text>当前筛选：</Text>
+              <Text className={styles.filterTagText}>{getFilterLabel(activeFilterKey)}</Text>
+              <Text className={styles.clearFilter} onClick={() => setActiveFilterKey('all')}>
+                ✕ 清除
+              </Text>
+            </View>
+          )}
           {showBillList && (
-            billCount > 0 ? (
+            filteredBills.length > 0 ? (
               <View className={styles.billList}>
-                {periodBills.map((bill) => (
+                {filteredBills.map((bill) => (
                   <BillItem
                     key={bill.id}
                     bill={bill}
@@ -221,7 +480,7 @@ const ReportPage: React.FC = () => {
                 ))}
               </View>
             ) : (
-              <EmptyState icon="📋" title="暂无账单" description="该时间段内暂无已支付账单" />
+              <EmptyState icon="📋" title="暂无账单" description={activeFilterKey !== 'all' ? '当前筛选条件下暂无匹配账单' : '该时间段内暂无已支付账单'} />
             )
           )}
         </View>

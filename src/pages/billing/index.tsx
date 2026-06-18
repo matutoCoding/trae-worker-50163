@@ -95,7 +95,24 @@ const BillingPage: React.FC = () => {
         return;
       }
       if (selectedMember.balance < checkoutBill.total) {
-        Taro.showToast({ title: '会员余额不足', icon: 'none' });
+        const shortage = checkoutBill.total - selectedMember.balance;
+        Taro.showModal({
+          title: '会员储值不足',
+          content: `${selectedMember.name} 余额 ${formatCurrency(selectedMember.balance)}\n应付 ${formatCurrency(checkoutBill.total)}\n还差 ${formatCurrency(shortage)}\n\n建议：更换会员或改用其他支付方式`,
+          showCancel: true,
+          cancelText: '换支付方式',
+          confirmText: '更换会员',
+          success: (res) => {
+            if (res.confirm) {
+              setSelectedMember(null);
+              setShowMemberPicker(true);
+            } else {
+              setPaymentMethod('wechat');
+              setSelectedMember(null);
+              setShowMemberPicker(false);
+            }
+          }
+        });
         return;
       }
       const result = closeBill(checkoutBill.id, 'member', selectedMember.id);
@@ -128,6 +145,12 @@ const BillingPage: React.FC = () => {
 
   const currentDuration = checkoutBill
     ? Math.floor((Date.now() - checkoutBill.startTime) / 60000)
+    : 0;
+
+  const isMemberInsufficient =
+    paymentMethod === 'member' && selectedMember && selectedMember.balance < (checkoutBill?.total || 0);
+  const memberShortage = isMemberInsufficient
+    ? (checkoutBill!.total - selectedMember!.balance)
     : 0;
 
   return (
@@ -305,7 +328,7 @@ const BillingPage: React.FC = () => {
                 <View className={styles.memberSection}>
                   <Text className={styles.methodsTitle}>选择会员</Text>
                   {selectedMember ? (
-                    <View className={styles.selectedMember}>
+                    <View className={classNames(styles.selectedMember, isMemberInsufficient && styles.memberError)}>
                       <View className={styles.memberInfo}>
                         <Text className={styles.memberName}>{selectedMember.name}</Text>
                         <View className={styles.memberMeta}>
@@ -320,7 +343,7 @@ const BillingPage: React.FC = () => {
                       </View>
                       <View className={styles.memberBalanceWrap}>
                         <Text className={styles.memberBalanceLabel}>余额</Text>
-                        <Text className={styles.memberBalance}>
+                        <Text className={classNames(styles.memberBalance, isMemberInsufficient && styles.balanceError)}>
                           {formatCurrency(selectedMember.balance)}
                         </Text>
                       </View>
@@ -377,16 +400,51 @@ const BillingPage: React.FC = () => {
                     </View>
                   )}
 
-                  {selectedMember && selectedMember.balance < checkoutBill.total && (
-                    <View className={styles.balanceWarning}>
-                      <Text className={styles.warningIcon}>⚠️</Text>
-                      <Text className={styles.warningText}>
-                        余额不足，还差 {formatCurrency(checkoutBill.total - selectedMember.balance)}
+                  {isMemberInsufficient && (
+                    <View className={styles.balanceInsufficient}>
+                      <View className={styles.insufficientHeader}>
+                        <Text className={styles.insufficientIcon}>🚫</Text>
+                        <Text className={styles.insufficientTitle}>储值余额不足</Text>
+                      </View>
+                      <View className={styles.insufficientDetail}>
+                        <View className={styles.insufficientRow}>
+                          <Text className={styles.insufficientLabel}>应付金额</Text>
+                          <Text className={styles.insufficientValue}>{formatCurrency(checkoutBill!.total)}</Text>
+                        </View>
+                        <View className={styles.insufficientRow}>
+                          <Text className={styles.insufficientLabel}>当前余额</Text>
+                          <Text className={styles.insufficientValue}>{formatCurrency(selectedMember!.balance)}</Text>
+                        </View>
+                        <View className={styles.insufficientRow}>
+                          <Text className={styles.insufficientLabel}>还需支付</Text>
+                          <Text className={classNames(styles.insufficientValue, styles.shortage)}>
+                            {formatCurrency(memberShortage)}
+                          </Text>
+                        </View>
+                      </View>
+                      <View className={styles.insufficientActions}>
+                        <View
+                          className={classNames(styles.insufficientAction, styles.primaryAction)}
+                          onClick={() => setShowMemberPicker(true)}
+                        >
+                          <Text>换个会员</Text>
+                        </View>
+                        <View
+                          className={classNames(styles.insufficientAction, styles.secondaryAction)}
+                          onClick={() => {
+                            setPaymentMethod('wechat');
+                          }}
+                        >
+                          <Text>改用微信支付</Text>
+                        </View>
+                      </View>
+                      <Text className={styles.insufficientHint}>
+                        💡 也可以切换为现金、支付宝、银行卡等其他方式
                       </Text>
                     </View>
                   )}
 
-                  {selectedMember && (
+                  {selectedMember && !isMemberInsufficient && (
                     <View
                       className={styles.changeMemberBtn}
                       onClick={() => {
@@ -408,13 +466,15 @@ const BillingPage: React.FC = () => {
               <Button
                 className={classNames(
                   styles.confirmBtn,
-                  paymentMethod === 'member' && !selectedMember && styles.disabled
+                  (paymentMethod === 'member' && !selectedMember) || isMemberInsufficient ? styles.disabled : ''
                 )}
                 onClick={handleConfirmCheckout}
-                disabled={paymentMethod === 'member' && !selectedMember}
+                disabled={paymentMethod === 'member' && (!selectedMember || isMemberInsufficient)}
               >
                 {paymentMethod === 'member' && !selectedMember
                   ? '请选择会员'
+                  : isMemberInsufficient
+                  ? `余额不足 差${formatCurrency(memberShortage)}`
                   : `确认支付 ${formatCurrency(checkoutBill.total)}`}
               </Button>
             </View>

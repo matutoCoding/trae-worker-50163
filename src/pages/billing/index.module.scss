@@ -483,6 +483,15 @@
   font-size: $font-size-sm;
 }
 
+.memberError {
+  border-color: $color-error !important;
+  background: rgba(255, 77, 79, 0.03) !important;
+}
+
+.balanceError {
+  color: $color-error !important;
+}
+
 .balanceWarning {
   display: flex;
   align-items: center;
@@ -500,6 +509,102 @@
 .warningText {
   font-size: $font-size-xs;
   color: #d48806;
+}
+
+.balanceInsufficient {
+  margin-top: $spacing-md;
+  padding: $spacing-md;
+  background: rgba(255, 77, 79, 0.06);
+  border: 2rpx solid rgba(255, 77, 79, 0.3);
+  border-radius: $radius-md;
+}
+
+.insufficientHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.insufficientIcon {
+  font-size: $font-size-lg;
+}
+
+.insufficientTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+  color: $color-error;
+}
+
+.insufficientDetail {
+  background: $color-bg-card;
+  border-radius: $radius-sm;
+  padding: $spacing-sm $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.insufficientRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-xs 0;
+}
+
+.insufficientLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.insufficientValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+
+  &.shortage {
+    font-size: $font-size-md;
+    color: $color-error;
+    font-weight: $font-weight-bold;
+  }
+}
+
+.insufficientActions {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+}
+
+.insufficientAction {
+  flex: 1;
+  padding: $spacing-sm 0;
+  text-align: center;
+  border-radius: $radius-sm;
+  transition: all $transition-base;
+
+  text {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+  }
+
+  &:active {
+    opacity: 0.8;
+  }
+
+  &.primaryAction {
+    background: $color-error;
+    text { color: $color-text-white; }
+  }
+
+  &.secondaryAction {
+    background: rgba(255, 77, 79, 0.1);
+    text { color: $color-error; }
+  }
+}
+
+.insufficientHint {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  text-align: center;
+  display: block;
 }
 
 .changeMemberBtn {

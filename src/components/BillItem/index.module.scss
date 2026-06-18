@@ -28,12 +28,42 @@
   font-size: $font-size-lg;
   font-weight: $font-weight-semibold;
   color: $color-text-primary;
+}
+
+.roomNameRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
   margin-bottom: $spacing-xs;
+}
+
+.memberPaymentBadge {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 4rpx 12rpx;
+  background: $color-warn-bg;
+  border-radius: $radius-round;
+}
+
+.memberBadgeIcon {
+  font-size: 20rpx;
+}
+
+.memberBadgeText {
+  font-size: 20rpx;
+  color: $color-warn-text;
+  font-weight: $font-weight-medium;
 }
 
 .billMeta {
   font-size: $font-size-sm;
   color: $color-text-tertiary;
+}
+
+.memberInfo {
+  color: $color-warn-text;
+  font-weight: $font-weight-medium;
 }
 
 .billStatus {

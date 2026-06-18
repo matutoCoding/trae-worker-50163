@@ -1,0 +1,176 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  padding: $spacing-xl $page-padding $spacing-xl * 1.5;
+  color: $color-text-white;
+}
+
+.pageTitle {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  display: block;
+  margin-bottom: $spacing-lg;
+}
+
+.summaryRow {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.summaryItem {
+  flex: 1;
+  text-align: center;
+  padding: $spacing-sm;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: $radius-md;
+}
+
+.summaryValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.summaryLabel {
+  font-size: $font-size-xs;
+  opacity: 0.9;
+}
+
+.content {
+  flex: 1;
+  padding: $page-padding;
+  padding-top: -$spacing-lg;
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  background: $color-bg-card;
+  border-radius: $radius-button;
+  padding: $spacing-sm $spacing-md;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-lg;
+}
+
+.searchIcon {
+  font-size: $font-size-lg;
+  margin-right: $spacing-sm;
+}
+
+.searchInput {
+  flex: 1;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+}
+
+.clearBtn {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+  padding: $spacing-xs;
+}
+
+.memberList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.memberCard {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  box-shadow: $shadow-card;
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+.memberAvatar {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatarText {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+}
+
+.memberInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.memberHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-xs;
+}
+
+.memberName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.memberLevel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  padding: 2rpx 12rpx;
+  background: $color-bg-hover;
+  border-radius: $radius-round;
+}
+
+.memberMeta {
+  display: flex;
+  gap: $spacing-md;
+  margin-bottom: $spacing-xs;
+}
+
+.metaText {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.memberStats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.statsText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.statsDot {
+  font-size: $font-size-xs;
+  color: $color-divider;
+}
+
+.arrow {
+  font-size: $font-size-xxl;
+  color: $color-text-tertiary;
+  flex-shrink: 0;
+}

@@ -50,6 +50,9 @@ const HomePage: React.FC = () => {
       case 'report':
         Taro.navigateTo({ url: '/pages/report/index' });
         break;
+      case 'member':
+        Taro.navigateTo({ url: '/pages/member/index' });
+        break;
       case 'settings':
         Taro.switchTab({ url: '/pages/settings/index' });
         break;
@@ -131,6 +134,13 @@ const HomePage: React.FC = () => {
           >
             <Text className={styles.actionIcon}>📊</Text>
             <Text className={styles.actionText}>经营报表</Text>
+          </View>
+          <View
+            className={styles.actionCard}
+            onClick={() => handleQuickAction('member')}
+          >
+            <Text className={styles.actionIcon}>👑</Text>
+            <Text className={styles.actionText}>会员中心</Text>
           </View>
           <View
             className={styles.actionCard}

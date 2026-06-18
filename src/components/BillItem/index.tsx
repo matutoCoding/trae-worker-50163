@@ -4,7 +4,7 @@ import Taro from '@tarojs/taro';
 import classNames from 'classnames';
 import styles from './index.module.scss';
 import { Bill } from '@/types';
-import { formatDateTime, formatCurrency, formatDuration } from '@/utils/format';
+import { formatDateTime, formatCurrency, formatDuration, getPaymentMethodText } from '@/utils/format';
 
 interface BillItemProps {
   bill: Bill;
@@ -23,21 +23,21 @@ const BillItem: React.FC<BillItemProps> = ({ bill, onCheckout, onViewDetail }) =
     Taro.navigateTo({ url: `/pages/billDetail/index?id=${bill.id}` });
   };
 
-  const getPaymentMethodText = (method?: string) => {
-    const map: Record<string, string> = {
-      cash: '现金',
-      wechat: '微信支付',
-      alipay: '支付宝',
-      card: '会员卡'
-    };
-    return map[method || ''] || '';
-  };
+  const isMemberPayment = bill.paymentMethod === 'member';
 
   return (
     <View className={styles.billItem}>
       <View className={styles.billHeader}>
         <View className={styles.billInfo}>
-          <Text className={styles.roomName}>{bill.roomName}</Text>
+          <View className={styles.roomNameRow}>
+            <Text className={styles.roomName}>{bill.roomName}</Text>
+            {isMemberPayment && (
+              <View className={styles.memberPaymentBadge}>
+                <Text className={styles.memberBadgeIcon}>👑</Text>
+                <Text className={styles.memberBadgeText}>会员储值</Text>
+              </View>
+            )}
+          </View>
           <Text className={styles.billMeta}>
             开台时间：{formatDateTime(bill.startTime)}
           </Text>
@@ -49,6 +49,11 @@ const BillItem: React.FC<BillItemProps> = ({ bill, onCheckout, onViewDetail }) =
           {bill.paymentMethod && (
             <Text className={styles.billMeta}>
               支付方式：{getPaymentMethodText(bill.paymentMethod)}
+            </Text>
+          )}
+          {bill.memberId && bill.status === 'paid' && (
+            <Text className={classNames(styles.billMeta, styles.memberInfo)}>
+              会员：{bill.memberName || '会员'} {bill.memberNo ? `(${bill.memberNo})` : ''}
             </Text>
           )}
         </View>
