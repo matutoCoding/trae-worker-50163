@@ -26,6 +26,9 @@ const SettingsPage: React.FC = () => {
       case 'ruleConfig':
         Taro.navigateTo({ url: '/pages/ruleConfig/index' });
         break;
+      case 'report':
+        Taro.navigateTo({ url: '/pages/report/index' });
+        break;
       case 'about':
         Taro.showModal({
           title: '关于系统',
@@ -141,6 +144,13 @@ const SettingsPage: React.FC = () => {
         <View className={styles.section}>
           <Text className={styles.sectionTitle}>其他</Text>
           <View className={styles.menuList}>
+            <View className={styles.menuItem} onClick={() => handleMenuClick('report')}>
+              <View className={styles.menuLeft}>
+                <Text className={styles.menuIcon}>📊</Text>
+                <Text className={styles.menuText}>经营报表</Text>
+              </View>
+              <Text className={styles.menuArrow}>›</Text>
+            </View>
             <View className={styles.menuItem} onClick={() => handleMenuClick('ruleConfig')}>
               <View className={styles.menuLeft}>
                 <Text className={styles.menuIcon}>💰</Text>

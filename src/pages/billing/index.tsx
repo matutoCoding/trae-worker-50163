@@ -1,29 +1,35 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, Button } from '@tarojs/components';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { View, Text, ScrollView, Button, Input } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classNames from 'classnames';
 import styles from './index.module.scss';
 import { useBillingStore } from '@/store/billingStore';
-import { Bill } from '@/types';
-import { formatCurrency } from '@/utils/format';
+import { useMemberStore } from '@/store/memberStore';
+import { Bill, Member } from '@/types';
+import { formatCurrency, formatDuration, getPaymentMethodText } from '@/utils/format';
 import BillItem from '@/components/BillItem';
 import StatCard from '@/components/StatCard';
 import EmptyState from '@/components/EmptyState';
 
 type TabType = 'open' | 'paid';
-type PaymentMethod = 'cash' | 'wechat' | 'alipay' | 'card';
+type PaymentMethod = 'cash' | 'wechat' | 'alipay' | 'card' | 'member';
 
 const PAYMENT_METHODS: Array<{ key: PaymentMethod; label: string; icon: string }> = [
-  { key: 'cash', label: '现金', icon: '💵' },
-  { key: 'wechat', label: '微信', icon: '💚' },
+  { key: 'wechat', label: '微信支付', icon: '💚' },
   { key: 'alipay', label: '支付宝', icon: '💙' },
-  { key: 'card', label: '会员卡', icon: '💳' }
+  { key: 'cash', label: '现金', icon: '💵' },
+  { key: 'card', label: '银行卡', icon: '💳' },
+  { key: 'member', label: '会员储值', icon: '👑' }
 ];
 
 const BillingPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('open');
   const [checkoutBill, setCheckoutBill] = useState<Bill | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('wechat');
+  const [memberSearch, setMemberSearch] = useState('');
+  const [showMemberPicker, setShowMemberPicker] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const refreshTimer = useRef<number | null>(null);
 
   const bills = useBillingStore((s) => s.bills);
   const openBills = useBillingStore((s) => s.getOpenBills());
@@ -34,6 +40,10 @@ const BillingPage: React.FC = () => {
   const recalculateBill = useBillingStore((s) => s.recalculateBill);
   const getBillById = useBillingStore((s) => s.getBillById);
 
+  const members = useMemberStore((s) => s.members);
+  const searchMembers = useMemberStore((s) => s.searchMembers);
+  const getMemberLevelText = useMemberStore((s) => s.getMemberLevelText);
+
   const displayBills = useMemo(() => {
     return activeTab === 'open' ? openBills : closedBills;
   }, [activeTab, openBills, closedBills]);
@@ -42,26 +52,83 @@ const BillingPage: React.FC = () => {
     return openBills.reduce((sum, b) => sum + b.total, 0);
   }, [openBills]);
 
+  const filteredMembers = useMemo(() => {
+    return searchMembers(memberSearch);
+  }, [memberSearch, searchMembers]);
+
+  useEffect(() => {
+    if (checkoutBill && checkoutBill.status === 'open') {
+      const doRefresh = () => {
+        recalculateBill(checkoutBill.id);
+        const fresh = getBillById(checkoutBill.id);
+        if (fresh) {
+          setCheckoutBill({ ...fresh });
+        }
+      };
+      doRefresh();
+      refreshTimer.current = window.setInterval(doRefresh, 30000);
+    }
+    return () => {
+      if (refreshTimer.current) {
+        clearInterval(refreshTimer.current);
+        refreshTimer.current = null;
+      }
+    };
+  }, [checkoutBill?.id, checkoutBill?.status, recalculateBill, getBillById]);
+
   const handleCheckout = (bill: Bill) => {
     recalculateBill(bill.id);
     const freshBill = getBillById(bill.id);
     setCheckoutBill(freshBill || bill);
     setPaymentMethod('wechat');
+    setSelectedMember(null);
+    setShowMemberPicker(false);
+    setMemberSearch('');
   };
 
   const handleConfirmCheckout = () => {
     if (!checkoutBill) return;
 
-    const result = closeBill(checkoutBill.id, paymentMethod);
-    if (result) {
-      Taro.showToast({ title: '结账成功', icon: 'success' });
-      setCheckoutBill(null);
+    if (paymentMethod === 'member') {
+      if (!selectedMember) {
+        Taro.showToast({ title: '请选择会员', icon: 'none' });
+        return;
+      }
+      if (selectedMember.balance < checkoutBill.total) {
+        Taro.showToast({ title: '会员余额不足', icon: 'none' });
+        return;
+      }
+      const result = closeBill(checkoutBill.id, 'member', selectedMember.id);
+      if (result) {
+        Taro.showToast({ title: '会员支付成功', icon: 'success' });
+        setCheckoutBill(null);
+        setSelectedMember(null);
+      } else {
+        Taro.showToast({ title: '支付失败', icon: 'error' });
+      }
+    } else {
+      const result = closeBill(checkoutBill.id, paymentMethod);
+      if (result) {
+        Taro.showToast({ title: '结账成功', icon: 'success' });
+        setCheckoutBill(null);
+      }
     }
   };
 
   const handleCancelCheckout = () => {
     setCheckoutBill(null);
+    setSelectedMember(null);
+    setShowMemberPicker(false);
   };
+
+  const handleSelectMember = (member: Member) => {
+    setSelectedMember(member);
+    setShowMemberPicker(false);
+  };
+
+  const currentDuration = checkoutBill
+    ? Math.floor((Date.now() - checkoutBill.startTime) / 60000)
+    : 0;
 
   return (
     <View className={styles.page}>
@@ -147,7 +214,7 @@ const BillingPage: React.FC = () => {
               </Text>
             </View>
 
-            <ScrollView scrollY>
+            <ScrollView scrollY className={styles.modalScroll}>
               <View className={styles.billDetail}>
                 <View className={styles.detailRow}>
                   <Text className={styles.detailLabel}>包间</Text>
@@ -159,15 +226,29 @@ const BillingPage: React.FC = () => {
                     {new Date(checkoutBill.startTime).toLocaleString()}
                   </Text>
                 </View>
-                {checkoutBill.durationMinutes && (
-                  <View className={styles.detailRow}>
-                    <Text className={styles.detailLabel}>消费时长</Text>
-                    <Text className={styles.detailValue}>
-                      {Math.floor(checkoutBill.durationMinutes / 60)}小时
-                      {checkoutBill.durationMinutes % 60}分钟
-                    </Text>
-                  </View>
-                )}
+                <View className={styles.detailRow}>
+                  <Text className={styles.detailLabel}>当前时长</Text>
+                  <Text className={styles.detailValue}>
+                    {formatDuration(currentDuration)}
+                  </Text>
+                </View>
+                <View className={styles.tagRow}>
+                  {checkoutBill.startingPriceApplied && (
+                    <View className={classNames(styles.tag, styles.tagOrange)}>
+                      <Text className={styles.tagText}>起步价</Text>
+                    </View>
+                  )}
+                  {checkoutBill.ceilingPriceApplied && (
+                    <View className={classNames(styles.tag, styles.tagRed)}>
+                      <Text className={styles.tagText}>已封顶</Text>
+                    </View>
+                  )}
+                  {checkoutBill.overnightApplied && (
+                    <View className={classNames(styles.tag, styles.tagPurple)}>
+                      <Text className={styles.tagText}>包夜套餐</Text>
+                    </View>
+                  )}
+                </View>
               </View>
 
               <Text className={styles.itemListTitle}>消费明细</Text>
@@ -205,7 +286,13 @@ const BillingPage: React.FC = () => {
                         styles.methodItem,
                         paymentMethod === method.key && styles.active
                       )}
-                      onClick={() => setPaymentMethod(method.key)}
+                      onClick={() => {
+                        setPaymentMethod(method.key);
+                        if (method.key !== 'member') {
+                          setSelectedMember(null);
+                          setShowMemberPicker(false);
+                        }
+                      }}
                     >
                       <Text className={styles.methodIcon}>{method.icon}</Text>
                       <Text className={styles.methodText}>{method.label}</Text>
@@ -213,14 +300,122 @@ const BillingPage: React.FC = () => {
                   ))}
                 </View>
               </View>
+
+              {paymentMethod === 'member' && (
+                <View className={styles.memberSection}>
+                  <Text className={styles.methodsTitle}>选择会员</Text>
+                  {selectedMember ? (
+                    <View className={styles.selectedMember}>
+                      <View className={styles.memberInfo}>
+                        <Text className={styles.memberName}>{selectedMember.name}</Text>
+                        <View className={styles.memberMeta}>
+                          <Text
+                            className={styles.memberLevel}
+                            style={{ color: useMemberStore.getState().getMemberLevelColor(selectedMember.level) }}
+                          >
+                            {getMemberLevelText(selectedMember.level)}
+                          </Text>
+                          <Text className={styles.memberNo}>{selectedMember.memberNo}</Text>
+                        </View>
+                      </View>
+                      <View className={styles.memberBalanceWrap}>
+                        <Text className={styles.memberBalanceLabel}>余额</Text>
+                        <Text className={styles.memberBalance}>
+                          {formatCurrency(selectedMember.balance)}
+                        </Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <View
+                      className={styles.memberSelectBtn}
+                      onClick={() => setShowMemberPicker(!showMemberPicker)}
+                    >
+                      <Text className={styles.memberSelectText}>选择会员扣款</Text>
+                      <Text className={styles.memberSelectArrow}>›</Text>
+                    </View>
+                  )}
+
+                  {showMemberPicker && (
+                    <View className={styles.memberPicker}>
+                      <Input
+                        className={styles.memberSearchInput}
+                        placeholder="搜索会员姓名/手机号/卡号"
+                        value={memberSearch}
+                        onInput={(e) => setMemberSearch(e.detail.value)}
+                      />
+                      <ScrollView className={styles.memberList} scrollY>
+                        {filteredMembers.length > 0 ? (
+                          filteredMembers.map((m) => (
+                            <View
+                              key={m.id}
+                              className={styles.memberPickItem}
+                              onClick={() => handleSelectMember(m)}
+                            >
+                              <View className={styles.memberPickInfo}>
+                                <Text className={styles.memberPickName}>{m.name}</Text>
+                                <View className={styles.memberPickMeta}>
+                                  <Text
+                                    className={styles.memberPickLevel}
+                                    style={{ color: useMemberStore.getState().getMemberLevelColor(m.level) }}
+                                  >
+                                    {getMemberLevelText(m.level)}
+                                  </Text>
+                                  <Text className={styles.memberPickPhone}>{m.phone}</Text>
+                                </View>
+                              </View>
+                              <Text className={styles.memberPickBalance}>
+                                {formatCurrency(m.balance)}
+                              </Text>
+                            </View>
+                          ))
+                        ) : (
+                          <View className={styles.memberPickerEmpty}>
+                            <Text>未找到会员</Text>
+                          </View>
+                        )}
+                      </ScrollView>
+                    </View>
+                  )}
+
+                  {selectedMember && selectedMember.balance < checkoutBill.total && (
+                    <View className={styles.balanceWarning}>
+                      <Text className={styles.warningIcon}>⚠️</Text>
+                      <Text className={styles.warningText}>
+                        余额不足，还差 {formatCurrency(checkoutBill.total - selectedMember.balance)}
+                      </Text>
+                    </View>
+                  )}
+
+                  {selectedMember && (
+                    <View
+                      className={styles.changeMemberBtn}
+                      onClick={() => {
+                        setSelectedMember(null);
+                        setShowMemberPicker(true);
+                      }}
+                    >
+                      <Text>更换会员</Text>
+                    </View>
+                  )}
+                </View>
+              )}
             </ScrollView>
 
             <View className={styles.footer}>
               <Button className={styles.cancelBtn} onClick={handleCancelCheckout}>
                 取消
               </Button>
-              <Button className={styles.confirmBtn} onClick={handleConfirmCheckout}>
-                确认支付 {formatCurrency(checkoutBill.total)}
+              <Button
+                className={classNames(
+                  styles.confirmBtn,
+                  paymentMethod === 'member' && !selectedMember && styles.disabled
+                )}
+                onClick={handleConfirmCheckout}
+                disabled={paymentMethod === 'member' && !selectedMember}
+              >
+                {paymentMethod === 'member' && !selectedMember
+                  ? '请选择会员'
+                  : `确认支付 ${formatCurrency(checkoutBill.total)}`}
               </Button>
             </View>
           </View>

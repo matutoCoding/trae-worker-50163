@@ -47,6 +47,9 @@ const HomePage: React.FC = () => {
       case 'billing':
         Taro.switchTab({ url: '/pages/billing/index' });
         break;
+      case 'report':
+        Taro.navigateTo({ url: '/pages/report/index' });
+        break;
       case 'settings':
         Taro.switchTab({ url: '/pages/settings/index' });
         break;
@@ -121,6 +124,13 @@ const HomePage: React.FC = () => {
           >
             <Text className={styles.actionIcon}>💳</Text>
             <Text className={styles.actionText}>账单管理</Text>
+          </View>
+          <View
+            className={styles.actionCard}
+            onClick={() => handleQuickAction('report')}
+          >
+            <Text className={styles.actionIcon}>📊</Text>
+            <Text className={styles.actionText}>经营报表</Text>
           </View>
           <View
             className={styles.actionCard}

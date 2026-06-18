@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { RoomStatus, RoomType } from '@/types';
 
-export type PaymentMethod = 'cash' | 'wechat' | 'alipay' | 'card';
+export type PaymentMethod = 'cash' | 'wechat' | 'alipay' | 'card' | 'member';
 export type BillStatus = 'open' | 'paid' | 'cancelled' | 'refunded';
 
 export function formatDuration(minutes: number): string {
@@ -99,7 +99,8 @@ export function getPaymentMethodText(method: PaymentMethod): string {
     cash: '现金',
     wechat: '微信支付',
     alipay: '支付宝',
-    card: '银行卡'
+    card: '银行卡',
+    member: '会员储值'
   };
   return map[method];
 }

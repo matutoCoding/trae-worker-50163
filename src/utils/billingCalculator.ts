@@ -64,7 +64,8 @@ export function calculateDurationInOvernight(
 export function calculateBilling(
   rule: BillingRule,
   startTime: number,
-  endTime?: number
+  endTime?: number,
+  forceOvernight?: boolean
 ): BillingResult {
   const actualEndTime = endTime || Date.now();
   const totalDuration = dayjs(actualEndTime).diff(startTime, 'minute');
@@ -83,8 +84,37 @@ export function calculateBilling(
     roomType: rule.roomType,
     startTime: dayjs(startTime).format('YYYY-MM-DD HH:mm'),
     endTime: dayjs(actualEndTime).format('YYYY-MM-DD HH:mm'),
-    totalDuration
+    totalDuration,
+    forceOvernight
   });
+
+  if (forceOvernight && rule.overnightEnabled) {
+    overnightApplied = true;
+    breakdown.overnightFee = rule.overnightPrice;
+    items.push({
+      id: `overnight-${Date.now()}`,
+      description: '包夜套餐',
+      amount: rule.overnightPrice,
+      quantity: 1,
+      unitPrice: rule.overnightPrice,
+      type: 'room'
+    });
+
+    console.log('[BillingCalculator] 强制包夜模式', {
+      overnightPrice: rule.overnightPrice,
+      totalDuration
+    });
+
+    return {
+      roomFee: rule.overnightPrice,
+      durationMinutes: totalDuration,
+      items,
+      overnightApplied: true,
+      startingPriceApplied: false,
+      ceilingPriceApplied: false,
+      breakdown
+    };
+  }
 
   if (rule.overnightEnabled) {
     const overnightMinutes = calculateDurationInOvernight(

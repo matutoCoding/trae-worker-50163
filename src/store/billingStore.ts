@@ -3,6 +3,7 @@ import { Bill, BillItem, RoomType, BillingRule } from '@/types';
 import { mockBills } from '@/data/mockBills';
 import { calculateBilling } from '@/utils/billingCalculator';
 import { useRoomStore } from './roomStore';
+import { useMemberStore } from './memberStore';
 
 interface BillingStore {
   bills: Bill[];
@@ -23,7 +24,7 @@ interface BillingStore {
   updateBillItem: (billId: string, itemId: string, updates: Partial<BillItem>) => void;
   removeBillItem: (billId: string, itemId: string) => void;
   applyDiscount: (billId: string, discount: number) => void;
-  closeBill: (billId: string, paymentMethod: 'cash' | 'wechat' | 'alipay' | 'card') => Bill | null;
+  closeBill: (billId: string, paymentMethod: 'cash' | 'wechat' | 'alipay' | 'card' | 'member', memberId?: string) => Bill | null;
   recalculateBill: (billId: string, endTime?: number) => void;
   getTodayRevenue: () => number;
   getTodayBillCount: () => number;
@@ -52,7 +53,7 @@ export const useBillingStore = create<BillingStore>((set, get) => ({
     }
 
     const now = Date.now();
-    const result = calculateBilling(rule, now);
+    const result = calculateBilling(rule, now, undefined, overnight);
 
     const newBill: Bill = {
       id: billId,
@@ -67,7 +68,7 @@ export const useBillingStore = create<BillingStore>((set, get) => ({
       total: result.roomFee,
       status: 'open',
       createdAt: now,
-      overnightApplied: overnight || result.overnightApplied,
+      overnightApplied: result.overnightApplied,
       startingPriceApplied: result.startingPriceApplied,
       ceilingPriceApplied: result.ceilingPriceApplied
     };
@@ -148,7 +149,7 @@ export const useBillingStore = create<BillingStore>((set, get) => ({
     console.log(`[BillingStore] 账单 ${billId} 应用折扣 ${discount}`);
   },
 
-  closeBill: (billId, paymentMethod) => {
+  closeBill: (billId, paymentMethod, memberId) => {
     const bill = get().getBillById(billId);
     if (!bill) {
       console.error(`[BillingStore] 未找到账单 ${billId}`);
@@ -162,12 +163,63 @@ export const useBillingStore = create<BillingStore>((set, get) => ({
       return null;
     }
 
-    const result = calculateBilling(rule, bill.startTime, now);
+    const result = calculateBilling(rule, bill.startTime, now, bill.overnightApplied);
     const otherItems = bill.items.filter((i) => i.type !== 'room');
     const otherSubtotal = otherItems.reduce((sum, i) => sum + i.amount, 0);
     const finalSubtotal = result.roomFee + otherSubtotal;
     const finalTotal = Math.max(0, finalSubtotal - bill.discount);
     const finalDuration = Math.floor((now - bill.startTime) / 60000);
+
+    if (paymentMethod === 'member') {
+      if (!memberId) {
+        console.error(`[BillingStore] 会员支付需提供会员ID`);
+        return null;
+      }
+      const { deductBalance, getMemberById } = useMemberStore.getState();
+      const member = getMemberById(memberId);
+      if (!member) {
+        console.error(`[BillingStore] 会员不存在: ${memberId}`);
+        return null;
+      }
+      if (member.balance < finalTotal) {
+        console.warn(`[BillingStore] 会员余额不足: ${member.balance} < ${finalTotal}`);
+        return null;
+      }
+      const success = deductBalance(memberId, finalTotal);
+      if (!success) {
+        return null;
+      }
+
+      const closedBill: Bill = {
+        ...bill,
+        endTime: now,
+        durationMinutes: finalDuration,
+        items: [...result.items, ...otherItems],
+        subtotal: finalSubtotal,
+        total: finalTotal,
+        status: 'paid',
+        paymentMethod,
+        memberId,
+        memberName: member.name,
+        memberNo: member.memberNo,
+        closedAt: now,
+        overnightApplied: result.overnightApplied,
+        startingPriceApplied: result.startingPriceApplied,
+        ceilingPriceApplied: result.ceilingPriceApplied
+      };
+
+      set((state) => ({
+        bills: state.bills.map((b) => (b.id === billId ? closedBill : b))
+      }));
+
+      const closeRoom = useRoomStore.getState().closeRoom;
+      closeRoom(bill.roomId);
+
+      console.log(
+        `[BillingStore] 结账 ${billId}, 会员支付: ${member.memberNo}, 金额: ${finalTotal}`
+      );
+      return closedBill;
+    }
 
     const closedBill: Bill = {
       ...bill,
@@ -205,7 +257,8 @@ export const useBillingStore = create<BillingStore>((set, get) => ({
     if (!rule) return;
 
     const actualEndTime = endTime || Date.now();
-    const result = calculateBilling(rule, bill.startTime, actualEndTime);
+    const forceOvernight = bill.overnightApplied;
+    const result = calculateBilling(rule, bill.startTime, actualEndTime, forceOvernight);
     const otherItems = bill.items.filter((i) => i.type !== 'room');
     const roomSubtotal = result.roomFee;
     const otherSubtotal = otherItems.reduce((sum, i) => sum + i.amount, 0);
@@ -219,7 +272,7 @@ export const useBillingStore = create<BillingStore>((set, get) => ({
           items: [...result.items, ...otherItems],
           subtotal: newSubtotal,
           total: newSubtotal - b.discount,
-          overnightApplied: result.overnightApplied,
+          overnightApplied: forceOvernight ? true : result.overnightApplied,
           startingPriceApplied: result.startingPriceApplied,
           ceilingPriceApplied: result.ceilingPriceApplied
         };

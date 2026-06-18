@@ -273,4 +273,242 @@
 .confirmBtn {
   background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
   color: $color-text-white;
+
+  &.disabled,
+  &:disabled {
+    opacity: 0.5;
+    background: $color-text-disabled;
+  }
+}
+
+.modalScroll {
+  max-height: 55vh;
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  margin-top: $spacing-sm;
+}
+
+.tag {
+  padding: 4rpx 16rpx;
+  border-radius: $radius-round;
+
+  &.tagOrange {
+    background: #fff7e6;
+  }
+
+  &.tagRed {
+    background: #fff1f0;
+  }
+
+  &.tagPurple {
+    background: #f9f0ff;
+  }
+}
+
+.tagText {
+  font-size: $font-size-xs;
+
+  .tagOrange & {
+    color: #fa8c16;
+  }
+
+  .tagRed & {
+    color: #f5222d;
+  }
+
+  .tagPurple & {
+    color: #722ed1;
+  }
+}
+
+.memberSection {
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.selectedMember {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.memberInfo {
+  flex: 1;
+}
+
+.memberName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.memberMeta {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+.memberLevel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.memberNo {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.memberBalanceWrap {
+  text-align: right;
+}
+
+.memberBalanceLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.memberBalance {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.memberSelectBtn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: $color-bg-card;
+  border: 2rpx dashed $color-border;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.memberSelectText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}
+
+.memberSelectArrow {
+  font-size: $font-size-xl;
+  color: $color-text-tertiary;
+}
+
+.memberPicker {
+  margin-top: $spacing-md;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  overflow: hidden;
+}
+
+.memberSearchInput {
+  width: 100%;
+  height: 72rpx;
+  padding: 0 $spacing-md;
+  font-size: $font-size-sm;
+  background: $color-bg-page;
+  border: none;
+  border-bottom: 1rpx solid $color-divider;
+  box-sizing: border-box;
+}
+
+.memberList {
+  max-height: 300rpx;
+}
+
+.memberPickItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}
+
+.memberPickInfo {
+  flex: 1;
+}
+
+.memberPickName {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.memberPickMeta {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+.memberPickLevel {
+  font-size: $font-size-xs;
+}
+
+.memberPickPhone {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.memberPickBalance {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+}
+
+.memberPickerEmpty {
+  padding: $spacing-lg;
+  text-align: center;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}
+
+.balanceWarning {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-top: $spacing-md;
+  padding: $spacing-sm $spacing-md;
+  background: #fff7e6;
+  border-radius: $radius-sm;
+}
+
+.warningIcon {
+  font-size: $font-size-md;
+}
+
+.warningText {
+  font-size: $font-size-xs;
+  color: #d48806;
+}
+
+.changeMemberBtn {
+  margin-top: $spacing-md;
+  text-align: center;
+  padding: $spacing-sm 0;
+
+  text {
+    font-size: $font-size-sm;
+    color: $color-primary;
+  }
 }

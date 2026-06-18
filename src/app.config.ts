@@ -6,7 +6,8 @@ export default defineAppConfig({
     'pages/settings/index',
     'pages/openRoom/index',
     'pages/billDetail/index',
-    'pages/ruleConfig/index'
+    'pages/ruleConfig/index',
+    'pages/report/index'
   ],
   window: {
     backgroundTextStyle: 'light',

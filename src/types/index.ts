@@ -2,6 +2,22 @@ export type RoomStatus = 'idle' | 'using' | 'overnight' | 'reserved' | 'maintena
 
 export type RoomType = 'standard' | 'deluxe' | 'vip' | 'presidential';
 
+export type MemberLevel = 'normal' | 'silver' | 'gold' | 'diamond';
+
+export interface Member {
+  id: string;
+  memberNo: string;
+  name: string;
+  phone: string;
+  level: MemberLevel;
+  balance: number;
+  totalConsumption: number;
+  visitCount: number;
+  avatar?: string;
+  createdAt: number;
+  lastVisitAt?: number;
+}
+
 export interface BillingRule {
   id: string;
   roomType: RoomType;
@@ -51,7 +67,10 @@ export interface Bill {
   discount: number;
   total: number;
   status: 'open' | 'closed' | 'paid';
-  paymentMethod?: 'cash' | 'wechat' | 'alipay' | 'card';
+  paymentMethod?: 'cash' | 'wechat' | 'alipay' | 'card' | 'member';
+  memberId?: string;
+  memberName?: string;
+  memberNo?: string;
   createdAt: number;
   closedAt?: number;
   overnightApplied: boolean;

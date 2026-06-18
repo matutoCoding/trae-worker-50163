@@ -105,6 +105,12 @@ const BillDetailPage: React.FC = () => {
               <Text className={styles.infoValue}>{getPaymentMethodText(bill.paymentMethod)}</Text>
             </View>
           )}
+          {bill.memberId && bill.memberName && (
+            <View className={styles.infoRow}>
+              <Text className={styles.infoLabel}>支付会员</Text>
+              <Text className={styles.infoValue}>{bill.memberName} ({bill.memberNo})</Text>
+            </View>
+          )}
         </View>
 
         <View className={styles.tagRow}>
