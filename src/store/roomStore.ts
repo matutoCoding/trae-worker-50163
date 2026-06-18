@@ -10,6 +10,8 @@ interface RoomStore {
   getRoomsByStatus: (status: RoomStatus) => Room[];
   getRoomsByType: (type: RoomType) => Room[];
   getBillingRule: (type: RoomType) => BillingRule | undefined;
+  getBillingRuleById: (id: string) => BillingRule | undefined;
+  updateBillingRule: (id: string, updates: Partial<BillingRule>) => void;
   updateRoomStatus: (id: string, status: RoomStatus) => void;
   openRoom: (roomId: string, overnight?: boolean) => string;
   closeRoom: (roomId: string) => void;
@@ -41,6 +43,17 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
   getRoomsByType: (type) => get().rooms.filter((r) => r.roomType === type),
 
   getBillingRule: (type) => get().billingRules.find((r) => r.roomType === type),
+
+  getBillingRuleById: (id) => get().billingRules.find((r) => r.id === id),
+
+  updateBillingRule: (id, updates) => {
+    set((state) => ({
+      billingRules: state.billingRules.map((r) =>
+        r.id === id ? { ...r, ...updates } : r
+      )
+    }));
+    console.log(`[RoomStore] 更新计费规则 ${id}`, updates);
+  },
 
   updateRoomStatus: (id, status) => {
     set((state) => ({

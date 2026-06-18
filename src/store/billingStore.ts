@@ -1,8 +1,8 @@
 import { create } from 'zustand';
-import { Bill, BillItem, RoomType } from '@/types';
+import { Bill, BillItem, RoomType, BillingRule } from '@/types';
 import { mockBills } from '@/data/mockBills';
-import { mockBillingRules } from '@/data/mockRooms';
 import { calculateBilling } from '@/utils/billingCalculator';
+import { useRoomStore } from './roomStore';
 
 interface BillingStore {
   bills: Bill[];
@@ -10,7 +10,7 @@ interface BillingStore {
   getOpenBills: () => Bill[];
   getClosedBills: () => Bill[];
   getBillsByRoom: (roomId: string) => Bill[];
-  getBillingRule: (type: RoomType) => typeof mockBillingRules[0] | undefined;
+  getBillingRule: (type: RoomType) => BillingRule | undefined;
   createBill: (params: {
     billId: string;
     roomId: string;
@@ -24,10 +24,12 @@ interface BillingStore {
   removeBillItem: (billId: string, itemId: string) => void;
   applyDiscount: (billId: string, discount: number) => void;
   closeBill: (billId: string, paymentMethod: 'cash' | 'wechat' | 'alipay' | 'card') => Bill | null;
-  recalculateBill: (billId: string) => void;
+  recalculateBill: (billId: string, endTime?: number) => void;
   getTodayRevenue: () => number;
   getTodayBillCount: () => number;
 }
+
+const getBillingRulesFromRoomStore = () => useRoomStore.getState().billingRules;
 
 export const useBillingStore = create<BillingStore>((set, get) => ({
   bills: mockBills,
@@ -40,10 +42,10 @@ export const useBillingStore = create<BillingStore>((set, get) => ({
 
   getBillsByRoom: (roomId) => get().bills.filter((b) => b.roomId === roomId),
 
-  getBillingRule: (type) => mockBillingRules.find((r) => r.roomType === type),
+  getBillingRule: (type) => getBillingRulesFromRoomStore().find((r) => r.roomType === type),
 
   createBill: ({ billId, roomId, roomName, roomNo, roomType, overnight = false }) => {
-    const rule = mockBillingRules.find((r) => r.roomType === roomType);
+    const rule = getBillingRulesFromRoomStore().find((r) => r.roomType === roomType);
     if (!rule) {
       console.error(`[BillingStore] 未找到包间类型 ${roomType} 的计费规则`);
       return;
@@ -154,32 +156,56 @@ export const useBillingStore = create<BillingStore>((set, get) => ({
     }
 
     const now = Date.now();
+    const rule = getBillingRulesFromRoomStore().find((r) => r.roomType === bill.roomType);
+    if (!rule) {
+      console.error(`[BillingStore] 未找到计费规则`);
+      return null;
+    }
+
+    const result = calculateBilling(rule, bill.startTime, now);
+    const otherItems = bill.items.filter((i) => i.type !== 'room');
+    const otherSubtotal = otherItems.reduce((sum, i) => sum + i.amount, 0);
+    const finalSubtotal = result.roomFee + otherSubtotal;
+    const finalTotal = Math.max(0, finalSubtotal - bill.discount);
+    const finalDuration = Math.floor((now - bill.startTime) / 60000);
+
     const closedBill: Bill = {
       ...bill,
       endTime: now,
-      durationMinutes: Math.floor((now - bill.startTime) / 60000),
+      durationMinutes: finalDuration,
+      items: [...result.items, ...otherItems],
+      subtotal: finalSubtotal,
+      total: finalTotal,
       status: 'paid',
       paymentMethod,
-      closedAt: now
+      closedAt: now,
+      overnightApplied: result.overnightApplied,
+      startingPriceApplied: result.startingPriceApplied,
+      ceilingPriceApplied: result.ceilingPriceApplied
     };
 
     set((state) => ({
       bills: state.bills.map((b) => (b.id === billId ? closedBill : b))
     }));
+
+    const closeRoom = useRoomStore.getState().closeRoom;
+    closeRoom(bill.roomId);
+
     console.log(
-      `[BillingStore] 结账 ${billId}, 金额: ${bill.total}, 支付方式: ${paymentMethod}`
+      `[BillingStore] 结账 ${billId}, 时长: ${finalDuration}分钟, 金额: ${finalTotal}, 支付方式: ${paymentMethod}`
     );
     return closedBill;
   },
 
-  recalculateBill: (billId) => {
+  recalculateBill: (billId, endTime) => {
     const bill = get().getBillById(billId);
     if (!bill || bill.status !== 'open') return;
 
-    const rule = mockBillingRules.find((r) => r.roomType === bill.roomType);
+    const rule = getBillingRulesFromRoomStore().find((r) => r.roomType === bill.roomType);
     if (!rule) return;
 
-    const result = calculateBilling(rule, bill.startTime);
+    const actualEndTime = endTime || Date.now();
+    const result = calculateBilling(rule, bill.startTime, actualEndTime);
     const otherItems = bill.items.filter((i) => i.type !== 'room');
     const roomSubtotal = result.roomFee;
     const otherSubtotal = otherItems.reduce((sum, i) => sum + i.amount, 0);

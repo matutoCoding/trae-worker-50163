@@ -165,12 +165,29 @@ export const useQueueStore = create<QueueStore>((set, get) => ({
   },
 
   cancelTicket: (ticketId) => {
+    const ticket = get().tickets.find((t) => t.id === ticketId);
+    const wasCallingOrServing = ticket && (ticket.status === 'calling' || ticket.status === 'serving');
+    const windowId = ticket?.windowId || ticket?.assignedWindowId;
+
     set((state) => ({
       tickets: state.tickets.map((t) =>
         t.id === ticketId ? { ...t, status: 'cancelled' } : t
-      )
+      ),
+      windows: wasCallingOrServing && windowId
+        ? state.windows.map((w) =>
+            w.id === windowId
+              ? {
+                  ...w,
+                  currentServing: w.currentServing === ticket?.ticketNo ? undefined : w.currentServing,
+                  servingCount: Math.max(0, w.servingCount - 1)
+                }
+              : w
+          )
+        : state.windows
     }));
-    console.log(`[QueueStore] 取消 ${ticketId}`);
+    console.log(
+      `[QueueStore] 取消 ${ticketId}, 恢复窗口状态: ${wasCallingOrServing ? '是' : '否'}`
+    );
   },
 
   completeTicket: (ticketId) => {

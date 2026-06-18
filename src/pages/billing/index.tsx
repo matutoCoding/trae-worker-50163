@@ -31,6 +31,8 @@ const BillingPage: React.FC = () => {
   const todayRevenue = useBillingStore((s) => s.getTodayRevenue());
   const todayBillCount = useBillingStore((s) => s.getTodayBillCount());
   const closeBill = useBillingStore((s) => s.closeBill);
+  const recalculateBill = useBillingStore((s) => s.recalculateBill);
+  const getBillById = useBillingStore((s) => s.getBillById);
 
   const displayBills = useMemo(() => {
     return activeTab === 'open' ? openBills : closedBills;
@@ -41,7 +43,9 @@ const BillingPage: React.FC = () => {
   }, [openBills]);
 
   const handleCheckout = (bill: Bill) => {
-    setCheckoutBill(bill);
+    recalculateBill(bill.id);
+    const freshBill = getBillById(bill.id);
+    setCheckoutBill(freshBill || bill);
     setPaymentMethod('wechat');
   };
 

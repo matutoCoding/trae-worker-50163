@@ -1,6 +1,9 @@
 import dayjs from 'dayjs';
 import { RoomStatus, RoomType } from '@/types';
 
+export type PaymentMethod = 'cash' | 'wechat' | 'alipay' | 'card';
+export type BillStatus = 'open' | 'paid' | 'cancelled' | 'refunded';
+
 export function formatDuration(minutes: number): string {
   if (minutes < 60) {
     return `${minutes}分钟`;
@@ -89,4 +92,24 @@ export function generateTicketNo(roomType: RoomType, seq: number): string {
     presidential: 'P'
   };
   return `${prefix[roomType]}${String(seq).padStart(3, '0')}`;
+}
+
+export function getPaymentMethodText(method: PaymentMethod): string {
+  const map: Record<PaymentMethod, string> = {
+    cash: '现金',
+    wechat: '微信支付',
+    alipay: '支付宝',
+    card: '银行卡'
+  };
+  return map[method];
+}
+
+export function getBillStatusText(status: BillStatus): string {
+  const map: Record<BillStatus, string> = {
+    open: '进行中',
+    paid: '已支付',
+    cancelled: '已取消',
+    refunded: '已退款'
+  };
+  return map[status];
 }
